@@ -1,0 +1,73 @@
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  CreateDateColumn,
+  UpdateDateColumn,
+  JoinColumn,
+} from 'typeorm';
+import { Lead } from './lead.entity';
+
+export enum AppointmentType {
+  VIDEO = 'video',
+  PHONE = 'phone',
+  IN_PERSON = 'in-person',
+}
+
+export enum AppointmentStatus {
+  SCHEDULED = 'scheduled',
+  COMPLETED = 'completed',
+  CANCELLED = 'cancelled',
+}
+
+@Entity('appointments')
+export class Appointment {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
+
+  @Column({ name: 'lead_id' })
+  leadId: string;
+
+  @ManyToOne(() => Lead, (lead) => lead.appointments)
+  @JoinColumn({ name: 'lead_id' })
+  lead: Lead;
+
+  @Column()
+  title: string;
+
+  @Column({ type: 'date' })
+  date: Date;
+
+  @Column({ type: 'time' })
+  time: string;
+
+  @Column({ type: 'varchar', length: 50 })
+  duration: string;
+
+  @Column({
+    type: 'enum',
+    enum: AppointmentType,
+    default: AppointmentType.VIDEO,
+  })
+  type: AppointmentType;
+
+  @Column({
+    type: 'enum',
+    enum: AppointmentStatus,
+    default: AppointmentStatus.SCHEDULED,
+  })
+  status: AppointmentStatus;
+
+  @Column({ name: 'ai_note', type: 'text', nullable: true })
+  aiNote: string;
+
+  @Column({ name: 'ai_suggested', type: 'boolean', default: false })
+  aiSuggested: boolean;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+}
