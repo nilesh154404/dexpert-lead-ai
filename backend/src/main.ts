@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
@@ -9,16 +9,16 @@ async function bootstrap() {
   // Enable CORS - Support multiple frontend origins
   const allowedOrigins = process.env.FRONTEND_URLS
     ? process.env.FRONTEND_URLS.split(',')
-    : ['http://localhost:8080', 'http://localhost:5173'];
+    : ['http://localhost:8080', 'http://localhost:5173', 'https://lead-ai.dexpertsystems.com', 'https://lead-ai-backend.dexpertsystems.com'];
 
   app.enableCors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
+
       // Allow Swagger UI
       if (origin.includes('localhost:3000')) return callback(null, true);
-      
+
       if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
         callback(null, true);
       } else {
@@ -39,13 +39,19 @@ async function bootstrap() {
     }),
   );
 
-  // Global prefix
+  // Global prefix with versioning
   app.setGlobalPrefix('api');
+  
+  // Enable versioning
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: '1',
+  });
 
   // Swagger configuration
   const config = new DocumentBuilder()
-    .setTitle('Kindred Lead AI API')
-    .setDescription('Backend API for Kindred Lead AI - Lead management and AI-powered conversations')
+    .setTitle('Dexpert Lead AI API')
+    .setDescription('Backend API for Dexpert Lead AI - Lead management and AI-powered conversations')
     .setVersion('1.0')
     .addBearerAuth(
       {

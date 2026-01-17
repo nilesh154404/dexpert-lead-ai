@@ -47,4 +47,9 @@ export class CreateAppointmentDto {
   @IsBoolean()
   @IsOptional()
   aiSuggested?: boolean;
+
+  @ApiProperty({ example: 'staff-uuid-here', required: false })
+  @IsString()
+  @IsOptional()
+  staffId?: string;
 }

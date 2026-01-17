@@ -18,10 +18,29 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    // Handle system tokens (from exchange endpoint)
+    if (payload.type === 'system') {
+      return {
+        id: payload.sub,
+        tenantId: payload.tenantId,
+        type: 'system',
+        clientType: payload.clientType,
+        scopes: payload.scopes || [],
+      };
+    }
+
+    // Handle user tokens
     const user = await this.authService.validateUser(payload.sub);
     if (!user) {
       throw new UnauthorizedException();
     }
-    return user;
+
+    // Attach permissions to user object
+    const permissions = await this.authService.getUserPermissions(user.id);
+    
+    return {
+      ...user,
+      permissions: permissions.map((p) => `${p.module}:${p.action}`),
+    };
   }
 }

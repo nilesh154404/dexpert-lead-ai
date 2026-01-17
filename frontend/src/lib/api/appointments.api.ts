@@ -9,6 +9,13 @@ export interface Appointment {
     email: string;
     company?: string;
   };
+  staffId?: string;
+  staff?: {
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  };
   title: string;
   date: string;
   time: string;
@@ -31,6 +38,34 @@ export interface CreateAppointmentDto {
   status?: 'scheduled' | 'completed' | 'cancelled';
   aiNote?: string;
   aiSuggested?: boolean;
+  staffId?: string;
+}
+
+export interface AvailableSlot {
+  date: string;
+  time: string;
+  availableStaff: Array<{
+    id: string;
+    name: string;
+    email: string;
+    role: string;
+  }>;
+  bookedStaff: Array<{
+    staff: {
+      id: string;
+      name: string;
+      email: string;
+      role: string;
+    };
+    bookedBy: {
+      appointmentId: string;
+      leadName: string;
+      leadId: string;
+    };
+  }>;
+  totalStaff: number;
+  availableCount: number;
+  bookedCount: number;
 }
 
 export const appointmentsApi = {
@@ -58,5 +93,11 @@ export const appointmentsApi = {
 
   delete: async (id: string): Promise<void> => {
     return apiClient.delete<void>(`/appointments/${id}`);
+  },
+
+  getAvailableSlots: async (date?: string): Promise<AvailableSlot[]> => {
+    return apiClient.get<AvailableSlot[]>('/appointments/available-slots', {
+      params: date ? { date } : {},
+    });
   },
 };

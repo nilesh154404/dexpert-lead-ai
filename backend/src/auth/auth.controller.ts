@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ExchangeDto } from './dto/exchange.dto';
 import { Public } from './decorators/public.decorator';
 
 @ApiTags('auth')
@@ -22,10 +23,20 @@ export class AuthController {
   @Post('login')
   @Public()
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Login user' })
+  @ApiOperation({ summary: 'Login user (Email/Password)' })
   @ApiResponse({ status: 200, description: 'Successfully logged in' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Post('v1/exchange')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'System/Integration Authentication - Exchange tenant credentials for JWT' })
+  @ApiResponse({ status: 200, description: 'Successfully exchanged credentials for token' })
+  @ApiResponse({ status: 401, description: 'Invalid tenant credentials' })
+  async exchange(@Body() exchangeDto: ExchangeDto) {
+    return this.authService.exchange(exchangeDto);
   }
 }

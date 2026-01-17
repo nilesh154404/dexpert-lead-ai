@@ -12,7 +12,7 @@ export class DatabaseConfigService implements TypeOrmOptionsFactory {
       host: this.configService.get<string>('DB_HOST', 'localhost'),
       port: this.configService.get<number>('DB_PORT', 3306),
       username: this.configService.get<string>('DB_USERNAME', 'root'),
-      password: this.configService.get<string>('DB_PASSWORD', 'aayush'),
+      password: this.configService.get<string>('DB_PASSWORD', 'nilesh'),
       database: this.configService.get<string>('DB_DATABASE', 'kindred_lead_ai'),
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
       synchronize: this.configService.get<string>('NODE_ENV') !== 'production',

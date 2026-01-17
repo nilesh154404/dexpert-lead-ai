@@ -8,6 +8,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Lead } from './lead.entity';
+import { User } from './user.entity';
 
 export enum AppointmentType {
   VIDEO = 'video',
@@ -64,6 +65,13 @@ export class Appointment {
 
   @Column({ name: 'ai_suggested', type: 'boolean', default: false })
   aiSuggested: boolean;
+
+  @Column({ name: 'staff_id', nullable: true })
+  staffId: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'staff_id' })
+  staff: User;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

@@ -43,6 +43,9 @@ export class Tenant {
   @Column({ name: 'chatbot_avatar', nullable: true })
   chatbotAvatar: string;
 
+  @Column({ name: 'tenant_secret', nullable: true, select: false })
+  tenantSecret: string;
+
   @OneToMany(() => User, (user) => user.tenant)
   users: User[];
 

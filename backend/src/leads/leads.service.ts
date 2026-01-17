@@ -4,11 +4,11 @@ import { Repository, Like, Between } from 'typeorm';
 import { Lead } from '../entities/lead.entity';
 import { LeadInsight } from '../entities/lead-insight.entity';
 import { Tenant } from '../entities/tenant.entity';
+import { User, UserRole } from '../entities/user.entity';
 import { CreateLeadDto } from './dto/create-lead.dto';
 import { UpdateLeadDto } from './dto/update-lead.dto';
 import { LeadQueryDto } from './dto/lead-query.dto';
 import { CreateLeadChatbotDto } from './dto/create-lead-chatbot.dto';
-import { UserRole } from '../entities/user.entity';
 
 @Injectable()
 export class LeadsService {
@@ -19,12 +19,56 @@ export class LeadsService {
     private insightRepository: Repository<LeadInsight>,
     @InjectRepository(Tenant)
     private tenantRepository: Repository<Tenant>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
+  /**
+   * Auto-assign staff to a lead based on load balancing
+   */
+  private async assignStaffToLead(tenantId: string): Promise<string | null> {
+    // Get staff members (excluding SUPER_ADMIN and ORGANISATION roles)
+    const staffMembers = await this.userRepository.find({
+      where: {
+        tenantId,
+        status: 'active' as any,
+      },
+      relations: ['assignedLeads'],
+    });
+
+    // Filter out non-staff roles
+    const eligibleStaff = staffMembers.filter(
+      (user) =>
+        user.role !== UserRole.SUPER_ADMIN &&
+        user.role !== UserRole.ORGANISATION &&
+        user.status === 'active',
+    );
+
+    if (eligibleStaff.length === 0) {
+      return null;
+    }
+
+    // Load balancing: assign to staff with fewest assigned leads
+    const staffWithCounts = eligibleStaff.map((staff) => ({
+      id: staff.id,
+      count: staff.assignedLeads?.length || 0,
+    }));
+
+    staffWithCounts.sort((a, b) => a.count - b.count);
+    return staffWithCounts[0].id;
+  }
+
   async create(createLeadDto: CreateLeadDto, tenantId: string): Promise<Lead> {
+    // Auto-assign staff if not provided
+    let assignedToId = createLeadDto.assignedToId;
+    if (!assignedToId) {
+      assignedToId = (await this.assignStaffToLead(tenantId)) || undefined;
+    }
+
     const lead = this.leadRepository.create({
       ...createLeadDto,
       tenantId,
+      assignedToId,
       lastInteractionAt: new Date(),
     });
 
@@ -153,6 +197,9 @@ export class LeadsService {
       throw new NotFoundException(`Organisation with ID ${createLeadChatbotDto.organisationId} not found`);
     }
 
+    // Auto-assign staff
+    const assignedToId = await this.assignStaffToLead(createLeadChatbotDto.organisationId);
+
     // Create lead from chatbot submission
     const lead = this.leadRepository.create({
       name: createLeadChatbotDto.name,
@@ -161,6 +208,7 @@ export class LeadsService {
       company: createLeadChatbotDto.company,
       role: createLeadChatbotDto.role,
       tenantId: createLeadChatbotDto.organisationId,
+      assignedToId: assignedToId || undefined,
       status: 'new' as any,
       source: 'AI Chatbot',
       intentScore: 0, // Can be calculated by AI later

@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { Tenant } from './tenant.entity';
 import { Lead } from './lead.entity';
+import { Role } from './role.entity';
 
 export enum UserRole {
   SUPER_ADMIN = 'super_admin',
@@ -45,7 +46,14 @@ export class User {
     enum: UserRole,
     default: UserRole.SALES,
   })
-  role: UserRole;
+  role: UserRole; // Keep for backward compatibility
+
+  @Column({ name: 'role_id', nullable: true })
+  roleId: string;
+
+  @ManyToOne(() => Role, { nullable: true })
+  @JoinColumn({ name: 'role_id' })
+  roleEntity: Role;
 
   @Column({ nullable: true })
   department: string;

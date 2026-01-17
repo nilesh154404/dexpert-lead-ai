@@ -13,7 +13,7 @@ interface TenantContextType {
 // Default tenant fallback
 const defaultTenant: TenantBranding = {
   id: "default",
-  name: "e-Office",
+  name: "DEXORA",
   primaryColor: "222 47% 20%",
   accentColor: "173 80% 40%",
   welcomeMessage: "Hi! I'm your AI assistant. How can I help you today?",
