@@ -7,7 +7,8 @@ import {
   BarChart3,
   Bot,
   UserCog,
-  Sparkles
+  Sparkles,
+  Globe
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -39,6 +40,7 @@ const aiNavItems = [
 ];
 
 const adminNavItems = [
+  { title: "Tenants", url: "/tenants", icon: Globe },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Team", url: "/team", icon: UserCog },
   { title: "Branding", url: "/branding", icon: Settings },
@@ -56,7 +58,8 @@ export function AppSidebar() {
   };
 
   // RBAC: Filter menu items based on role
-  const canAccessAdmin = user?.role === 'super_admin' || user?.role === 'organisation';
+  const isSuperAdmin = user?.role === 'super_admin';
+  const canAccessAdmin = isSuperAdmin || user?.role === 'organisation';
   const canAccessAIConfig = canAccessAdmin;
   
   // All roles can access main items, but filter admin items
