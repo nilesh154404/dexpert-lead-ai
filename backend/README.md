@@ -97,8 +97,13 @@ Once the server is running, access Swagger documentation at:
 - `GET /api/analytics/leads-over-time` - Get leads generated over time
 
 ### Tenants (`/api/tenants`)
+- `POST /api/tenants` - Create a new tenant (requires TENANTS:CREATE permission)
+- `GET /api/tenants` - Get all tenants with pagination (requires TENANTS:READ permission)
+- `GET /api/tenants/:id` - Get a specific tenant by ID (requires TENANTS:READ permission)
+- `PATCH /api/tenants/:id` - Update a tenant by ID (requires TENANTS:UPDATE permission)
+- `DELETE /api/tenants/:id` - Delete a tenant by ID (requires TENANTS:DELETE permission)
 - `GET /api/tenants/me` - Get current tenant branding settings
-- `PATCH /api/tenants/me` - Update tenant branding settings
+- `PATCH /api/tenants/me` - Update current tenant branding settings
 
 ### AI Config (`/api/ai-config`)
 - `GET /api/ai-config/rules` - Get all automation rules
@@ -231,7 +236,79 @@ GET /api/analytics/dashboard
 Authorization: Bearer <token>
 ```
 
-### 9. Update Tenant Branding
+### 9. Create a Tenant
+```bash
+POST /api/tenants
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Acme Corporation",
+  "primaryColor": "222 47% 20%",
+  "accentColor": "173 80% 40%",
+  "fontFamily": "Inter",
+  "welcomeMessage": "Welcome to Acme Corporation!",
+  "chatbotName": "Acme Assistant",
+  "chatbotAvatar": "https://example.com/avatar.png",
+  "logo": "https://example.com/logo.png",
+  "logomark": "https://example.com/logomark.png",
+  "tenantSecret": "optional-secret-key"
+}
+```
+
+### 10. Get All Tenants (Paginated)
+```bash
+GET /api/tenants?page=1&limit=10
+Authorization: Bearer <token>
+```
+
+**Response:**
+```json
+{
+  "data": [
+    {
+      "id": "tenant-uuid",
+      "name": "Acme Corporation",
+      "primaryColor": "222 47% 20%",
+      "accentColor": "173 80% 40%",
+      "createdAt": "2025-01-15T10:00:00Z",
+      "updatedAt": "2025-01-15T10:00:00Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 10
+}
+```
+
+### 11. Get Tenant by ID
+```bash
+GET /api/tenants/:id
+Authorization: Bearer <token>
+```
+
+### 12. Update Tenant by ID
+```bash
+PATCH /api/tenants/:id
+Authorization: Bearer <token>
+Content-Type: application/json
+
+{
+  "name": "Updated Company Name",
+  "primaryColor": "222 47% 20%",
+  "accentColor": "173 80% 40%"
+}
+```
+
+### 13. Delete Tenant
+```bash
+DELETE /api/tenants/:id
+Authorization: Bearer <token>
+```
+
+**Note:** Cannot delete a tenant that has associated users. Remove all users first.
+
+### 14. Update Current Tenant Branding
 ```bash
 PATCH /api/tenants/me
 Authorization: Bearer <token>
