@@ -1,10 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional } from 'class-validator';
+import { IsOptional, IsString, IsEmail } from 'class-validator';
+
 
 export class CreateTenantDto {
   @ApiProperty({ example: 'Acme Corporation' })
   @IsString()
   name: string;
+
+
+  @ApiProperty({ example: 'contact@techcorp.com', required: false })
+  @IsEmail()
+  @IsOptional()
+  email?: string;
+
+
+ @IsOptional()
+  @IsString()
+  mobileNumber?: string;
+
 
   @ApiProperty({ required: false })
   @IsString()

@@ -14,6 +14,8 @@ import { TenantsModule } from './tenants/tenants.module';
 import { AiConfigModule } from './ai-config/ai-config.module';
 import { DatabaseConfigService } from './database/database-config.service';
 import { PublicGuard } from './auth/guards/public.guard';
+import { FileUploadModule } from './file-upload/file-upload.module';
+
 
 @Module({
   imports: [
@@ -32,6 +34,9 @@ import { PublicGuard } from './auth/guards/public.guard';
     AnalyticsModule,
     TenantsModule,
     AiConfigModule,
+  
+    FileUploadModule,
+    // other modules,
   ],
   controllers: [AppController],
   providers: [
