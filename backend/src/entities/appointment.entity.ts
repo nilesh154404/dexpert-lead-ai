@@ -27,10 +27,17 @@ export class Appointment {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ name: 'lead_id' })
+  @Column({ name: 'admin_id', nullable: true })
+  adminId: string;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'admin_id' })
+  admin: User;
+
+  @Column({ name: 'lead_id', nullable: true })
   leadId: string;
 
-  @ManyToOne(() => Lead, (lead) => lead.appointments)
+  @ManyToOne(() => Lead, (lead) => lead.appointments, { nullable: true })
   @JoinColumn({ name: 'lead_id' })
   lead: Lead;
 
@@ -40,7 +47,7 @@ export class Appointment {
   @Column({ type: 'date' })
   date: Date;
 
-  @Column({ type: 'time' })
+  @Column({ type: 'time', name: 'start_time' })
   time: string;
 
   @Column({ type: 'varchar', length: 50 })

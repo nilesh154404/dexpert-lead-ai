@@ -2,7 +2,13 @@ import { apiClient } from '../api-client';
 
 export interface Appointment {
   id: string;
-  leadId: string;
+  adminId?: string;
+  admin?: {
+    id: string;
+    name: string;
+    email: string;
+  };
+  leadId?: string;
   lead?: {
     id: string;
     name: string;
@@ -29,7 +35,6 @@ export interface Appointment {
 }
 
 export interface CreateAppointmentDto {
-  leadId: string;
   title: string;
   date: string;
   time: string;
@@ -38,7 +43,6 @@ export interface CreateAppointmentDto {
   status?: 'scheduled' | 'completed' | 'cancelled';
   aiNote?: string;
   aiSuggested?: boolean;
-  staffId?: string;
 }
 
 export interface AvailableSlot {

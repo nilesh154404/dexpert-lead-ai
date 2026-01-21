@@ -25,6 +25,12 @@ export class Tenant {
   @Column({ nullable: true })
   logomark: string;
 
+  @Column({ nullable: true })
+  email?: string;
+
+  @Column({ nullable: true })
+  phone?: string;
+
   @Column({ name: 'primary_color', default: '222 47% 20%' })
   primaryColor: string;
 

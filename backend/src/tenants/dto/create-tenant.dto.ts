@@ -2,20 +2,23 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsOptional, IsString, IsEmail } from 'class-validator';
 
 
-export class UpdateTenantDto {
-  @ApiProperty({ required: false })
+export class CreateTenantDto {
+  @ApiProperty({ example: 'Acme Corporation' })
   @IsString()
-  @IsOptional()
-  name?: string;
+  name: string;
 
-  @IsOptional()
+
+  @ApiProperty({ example: 'contact@techcorp.com', required: false })
   @IsEmail()
+  @IsOptional()
   email?: string;
 
-  
-  @IsOptional()
+
+  @ApiProperty({ example: '+91 9876543210', required: false })
   @IsString()
+  @IsOptional()
   phone?: string;
+
 
   @ApiProperty({ required: false })
   @IsString()
@@ -56,4 +59,9 @@ export class UpdateTenantDto {
   @IsString()
   @IsOptional()
   chatbotAvatar?: string;
+
+  @ApiProperty({ required: false, description: 'Tenant secret for API access' })
+  @IsString()
+  @IsOptional()
+  tenantSecret?: string;
 }

@@ -12,60 +12,57 @@ export class PermissionsGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermissions = this.reflector.getAllAndOverride<PermissionRequirement[]>(
-      PERMISSIONS_KEY,
-      [context.getHandler(), context.getClass()],
-    );
+  const requiredPermissions = this.reflector.getAllAndOverride<PermissionRequirement[]>(
+    PERMISSIONS_KEY,
+    [context.getHandler(), context.getClass()],
+  );
 
-    if (!requiredPermissions || requiredPermissions.length === 0) {
-      return true; // No permissions required
-    }
-
-    const request = context.switchToHttp().getRequest();
-    const user = request.user;
-
-    if (!user) {
-      throw new ForbiddenException('Authentication required');
-    }
-
-    // System tokens (from exchange endpoint) don't need permission checks
-    // They are validated by scopes
-    if (user.type === 'system') {
-      // For system tokens, check scopes instead
-      const scopes = user.scopes || [];
-      const hasAllPermissions = requiredPermissions.every((req) => {
-        // Check if scope matches (e.g., 'leads:create' matches PermissionModule.LEADS + PermissionAction.CREATE)
-        const scopeName = `${req.module}:${req.action}`;
-        return scopes.includes('*') || scopes.includes(scopeName);
-      });
-      return hasAllPermissions;
-    }
-
-    // User-based tokens - check permissions
-    if (!user.id) {
-      throw new ForbiddenException('Invalid user context');
-    }
-
-    // SuperAdmin has all permissions
-    if (user.role === 'super_admin') {
-      return true;
-    }
-
-    // Check each required permission
-    for (const permission of requiredPermissions) {
-      const hasPermission = await this.authService.hasPermission(
-        user.id,
-        permission.module,
-        permission.action,
-      );
-
-      if (!hasPermission) {
-        throw new ForbiddenException(
-          `Missing permission: ${permission.module}:${permission.action}`,
-        );
-      }
-    }
-
+  // If no permissions are required, allow
+  if (!requiredPermissions || requiredPermissions.length === 0) {
     return true;
   }
+
+  const request = context.switchToHttp().getRequest();
+  const user = request.user;
+
+  if (!user) {
+    throw new ForbiddenException('Authentication required');
+  }
+
+  // ✅ IMPORTANT FIX: Super Admin bypasses ALL permission checks
+  if (user.role === 'super_admin') {
+    return true;
+  }
+
+  // System tokens (exchange endpoint)
+  if (user.type === 'system') {
+    const scopes = user.scopes || [];
+    return requiredPermissions.every((req) => {
+      const scopeName = `${req.module}:${req.action}`;
+      return scopes.includes('*') || scopes.includes(scopeName);
+    });
+  }
+
+  if (!user.id) {
+    throw new ForbiddenException('Invalid user context');
+  }
+
+  // Check permissions from roleEntity
+  for (const permission of requiredPermissions) {
+    const hasPermission = await this.authService.hasPermission(
+      user.id,
+      permission.module,
+      permission.action,
+    );
+
+    if (!hasPermission) {
+      throw new ForbiddenException(
+        `Missing permission: ${permission.module}:${permission.action}`,
+      );
+    }
+  }
+
+  return true;
+}
+
 }

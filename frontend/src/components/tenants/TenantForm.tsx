@@ -15,12 +15,25 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Upload } from 'lucide-react';
 import { CreateTenantDto, UpdateTenantDto, TenantBranding } from '@/lib/api/tenants-admin.api';
 import { parseHSLString, toHSLString, hslToHex } from '@/lib/color-utils';
 
 const tenantFormSchema = z.object({
-  name: z.string().min(1, 'Organization name is required').min(3, 'Name must be at least 3 characters'),
+  name: z
+    .string()
+    .min(1, 'Organization name is required')
+    .min(3, 'Name must be at least 3 characters'),
+
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Invalid email address'),
+
+  mobileNumber: z
+    .string()
+    .min(1, 'Mobile number is required'),
+
   logo: z.string().optional().or(z.literal('')),
   logomark: z.string().optional().or(z.literal('')),
   primaryColor: z.string().regex(/^\d+ \d+% \d+%$/, 'Invalid color format'),
@@ -29,7 +42,9 @@ const tenantFormSchema = z.object({
   welcomeMessage: z.string().optional().or(z.literal('')),
   chatbotName: z.string().optional().or(z.literal('')),
   chatbotAvatar: z.string().optional().or(z.literal('')),
+  imageFile: z.instanceof(File).optional(),
 });
+
 
 type TenantFormValues = z.infer<typeof tenantFormSchema>;
 
@@ -47,12 +62,15 @@ const defaultColors = {
 
 export function TenantForm({ onSubmit, isLoading = false, defaultValues, isEditMode = false }: TenantFormProps) {
   const [showColorPickers, setShowColorPickers] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState<string>('');
 
   const form = useForm<TenantFormValues>({
     resolver: zodResolver(tenantFormSchema),
     defaultValues: defaultValues
       ? {
           name: defaultValues.name,
+          email: (defaultValues as any).email || '',
+          mobileNumber: (defaultValues as any).mobileNumber || '',
           logo: defaultValues.logo || '',
           logomark: defaultValues.logomark || '',
           primaryColor: defaultValues.primaryColor,
@@ -64,6 +82,8 @@ export function TenantForm({ onSubmit, isLoading = false, defaultValues, isEditM
         }
       : {
           name: '',
+          email: '',
+          mobileNumber: '',
           logo: '',
           logomark: '',
           primaryColor: defaultColors.primary,
@@ -111,6 +131,36 @@ export function TenantForm({ onSubmit, isLoading = false, defaultValues, isEditM
                       <Input placeholder="e.g., TechCorp Solutions" {...field} />
                     </FormControl>
                     <FormDescription>The name of your organization</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="contact@example.com" {...field} />
+                    </FormControl>
+                    <FormDescription>Organization contact email</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="mobileNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Mobile Number</FormLabel>
+                    <FormControl>
+                      <Input type="tel" placeholder="+1 (555) 000-0000" {...field} />
+                    </FormControl>
+                    <FormDescription>Organization contact phone number</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -269,6 +319,71 @@ export function TenantForm({ onSubmit, isLoading = false, defaultValues, isEditM
                       <Textarea placeholder="Hi! How can I help you today?" {...field} rows={3} />
                     </FormControl>
                     <FormDescription>Message shown when chatbot starts a conversation</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          {/* File Upload */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Organization Images</CardTitle>
+              <CardDescription>Upload images for your organization</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="imageFile"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Upload Image</FormLabel>
+                    <FormControl>
+                      <div className="flex flex-col gap-3">
+                        <div className="relative">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                form.setValue('imageFile', file);
+                                setUploadedFileName(file.name);
+                              }
+                            }}
+                            className="hidden"
+                            id="file-upload"
+                          />
+                          <label
+                            htmlFor="file-upload"
+                            className="flex items-center justify-center w-full px-4 py-6 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-gray-400 transition-colors"
+                          >
+                            <div className="flex flex-col items-center gap-2">
+                              <Upload className="h-6 w-6 text-gray-400" />
+                              <span className="text-sm text-gray-600">
+                                Click to upload or drag and drop
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                PNG, JPG, GIF up to 10MB
+                              </span>
+                            </div>
+                          </label>
+                        </div>
+                        {uploadedFileName && (
+                          <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+                            <div className="h-8 w-8 rounded bg-green-100 flex items-center justify-center">
+                              <Upload className="h-4 w-4 text-green-600" />
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-green-800">{uploadedFileName}</p>
+                              <p className="text-xs text-green-700">Ready to upload</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </FormControl>
+                    <FormDescription>Upload organization images (optional)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}

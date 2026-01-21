@@ -1,21 +1,49 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tenant } from '../entities/tenant.entity';
+import { User } from '../entities/user.entity';
+import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
-import * as crypto from 'crypto';
 
 @Injectable()
 export class TenantsService {
   constructor(
     @InjectRepository(Tenant)
     private tenantRepository: Repository<Tenant>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
-  async findAll(): Promise<Tenant[]> {
-    return this.tenantRepository.find({
-      order: { createdAt: 'DESC' },
+  async create(createTenantDto: CreateTenantDto): Promise<Tenant> {
+    // Check if tenant with same name already exists
+    const existingTenant = await this.tenantRepository.findOne({
+      where: { name: createTenantDto.name },
     });
+
+    if (existingTenant) {
+      throw new BadRequestException(`Tenant with name "${createTenantDto.name}" already exists`);
+    }
+
+    const tenant = this.tenantRepository.create(createTenantDto);
+    return this.tenantRepository.save(tenant);
+  }
+
+  async findAll(page: number = 1, limit: number = 10): Promise<{ data: Tenant[]; total: number; page: number; limit: number }> {
+    const [data, total] = await this.tenantRepository.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: {
+        createdAt: 'DESC',
+      },
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+    };
   }
 
   async findOne(id: string): Promise<Tenant> {
@@ -30,33 +58,26 @@ export class TenantsService {
     return tenant;
   }
 
-  async create(createTenantDto: any): Promise<Tenant> {
-    const tenantSecret = crypto.randomBytes(32).toString('hex');
-    
-    const tenant = new Tenant();
-    tenant.name = createTenantDto.name;
-    tenant.logo = createTenantDto.logo || null;
-    tenant.logomark = createTenantDto.logomark || null;
-    tenant.primaryColor = createTenantDto.primaryColor || '222 47% 20%';
-    tenant.accentColor = createTenantDto.accentColor || '173 80% 40%';
-    tenant.fontFamily = createTenantDto.fontFamily || null;
-    tenant.welcomeMessage = createTenantDto.welcomeMessage || null;
-    tenant.chatbotName = createTenantDto.chatbotName || null;
-    tenant.chatbotAvatar = createTenantDto.chatbotAvatar || null;
-    tenant.tenantSecret = tenantSecret;
-
-    const saved = await this.tenantRepository.save(tenant);
-    return saved;
-  }
-
   async update(id: string, updateTenantDto: UpdateTenantDto): Promise<Tenant> {
     const tenant = await this.findOne(id);
     Object.assign(tenant, updateTenantDto);
     return this.tenantRepository.save(tenant);
   }
 
-  async delete(id: string): Promise<void> {
+  async remove(id: string): Promise<void> {
     const tenant = await this.findOne(id);
+    
+    // Check if tenant has associated users
+    const userCount = await this.userRepository.count({
+      where: { tenantId: id },
+    });
+
+    if (userCount > 0) {
+      throw new BadRequestException(
+        `Cannot delete tenant with ID ${id} because it has ${userCount} associated user(s). Please remove all users first.`
+      );
+    }
+
     await this.tenantRepository.remove(tenant);
   }
 }

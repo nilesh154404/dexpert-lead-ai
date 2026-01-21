@@ -3,11 +3,6 @@ import { IsNotEmpty, IsString, IsDateString, IsEnum, IsOptional, IsBoolean } fro
 import { AppointmentType, AppointmentStatus } from '../../entities/appointment.entity';
 
 export class CreateAppointmentDto {
-  @ApiProperty({ example: 'lead-uuid-here' })
-  @IsString()
-  @IsNotEmpty()
-  leadId: string;
-
   @ApiProperty({ example: 'Product Demo' })
   @IsString()
   @IsNotEmpty()
@@ -33,11 +28,6 @@ export class CreateAppointmentDto {
   @IsOptional()
   type?: AppointmentType;
 
-  @ApiProperty({ enum: AppointmentStatus, default: AppointmentStatus.SCHEDULED, required: false })
-  @IsEnum(AppointmentStatus)
-  @IsOptional()
-  status?: AppointmentStatus;
-
   @ApiProperty({ example: 'High intent - prepare pricing', required: false })
   @IsString()
   @IsOptional()
@@ -48,8 +38,8 @@ export class CreateAppointmentDto {
   @IsOptional()
   aiSuggested?: boolean;
 
-  @ApiProperty({ example: 'staff-uuid-here', required: false })
+  @ApiProperty({ example: 'uuid-of-lead', required: false })
   @IsString()
   @IsOptional()
-  staffId?: string;
+  leadId?: string;
 }
