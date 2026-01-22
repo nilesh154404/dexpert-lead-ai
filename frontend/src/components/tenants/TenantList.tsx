@@ -37,7 +37,9 @@ export function TenantList({
       <div className="rounded-xl border bg-card p-12 text-center">
         <Globe className="h-12 w-12 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-600">No organizations yet</p>
-        <p className="text-sm text-gray-500">Create your first organization to get started</p>
+        <p className="text-sm text-gray-500">
+          Create your first organization to get started
+        </p>
       </div>
     );
   }
@@ -49,20 +51,34 @@ export function TenantList({
           <TableRow className="bg-secondary/50">
             <TableHead>Organization</TableHead>
             <TableHead>Branding</TableHead>
-            <TableHead>Chatbot</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Created</TableHead>
-            <TableHead className="w-[50px]"></TableHead>
+            <TableHead className="w-[50px]" />
           </TableRow>
         </TableHeader>
+
         <TableBody>
           {tenants.map((tenant) => {
-            const primaryHex = hslToHex(...tenant.primaryColor.match(/\d+/g)!.map(Number));
-            const accentHex = hslToHex(...tenant.accentColor.match(/\d+/g)!.map(Number));
-            const createdDate = new Date(tenant.createdAt);
-            const timeAgo = formatDistanceToNow(createdDate, { addSuffix: true });
+            const isActive = tenant.status === 'active';
+
+            const primaryHex = hslToHex(
+              ...tenant.primaryColor.match(/\d+/g)!.map(Number)
+            );
+            const accentHex = hslToHex(
+              ...tenant.accentColor.match(/\d+/g)!.map(Number)
+            );
+
+            const timeAgo = formatDistanceToNow(
+              new Date(tenant.createdAt),
+              { addSuffix: true }
+            );
 
             return (
-              <TableRow key={tenant.id}>
+              <TableRow
+                key={tenant.id}
+                className={!isActive ? 'opacity-60' : ''}
+              >
+                {/* Organization */}
                 <TableCell>
                   <div className="flex items-center gap-3">
                     {tenant.logo ? (
@@ -73,41 +89,48 @@ export function TenantList({
                       />
                     ) : (
                       <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-sm font-medium">
-                        {tenant.name.split(' ').map(n => n[0]).join('')}
+                        {tenant.name
+                          .split(' ')
+                          .map((n) => n[0])
+                          .join('')}
                       </div>
                     )}
                     <div>
                       <p className="font-medium">{tenant.name}</p>
-                      <p className="text-sm text-muted-foreground">{tenant.id}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {tenant.id}
+                      </p>
                     </div>
                   </div>
                 </TableCell>
 
+                {/* Branding */}
                 <TableCell>
-                  <div className="flex items-center gap-2">
+                  <div className="flex gap-2">
                     <div
-                      className="w-6 h-6 rounded border border-gray-300"
+                      className="w-6 h-6 rounded border"
                       style={{ backgroundColor: primaryHex }}
                     />
                     <div
-                      className="w-6 h-6 rounded border border-gray-300"
+                      className="w-6 h-6 rounded border"
                       style={{ backgroundColor: accentHex }}
                     />
                   </div>
                 </TableCell>
 
+                {/* Status */}
                 <TableCell>
-                  {tenant.chatbotName ? (
-                    <Badge variant="outline">{tenant.chatbotName}</Badge>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">—</span>
-                  )}
+                  <Badge variant={isActive ? 'success' : 'destructive'}>
+                    {isActive ? 'Active' : 'Inactive'}
+                  </Badge>
                 </TableCell>
 
+                {/* Created */}
                 <TableCell className="text-sm text-muted-foreground">
                   {timeAgo}
                 </TableCell>
 
+                {/* Actions */}
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -115,8 +138,12 @@ export function TenantList({
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
+
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEdit(tenant)}>
+                      <DropdownMenuItem
+                        onClick={() => onEdit(tenant)}
+                        disabled={!isActive}
+                      >
                         <Edit2 className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
@@ -126,7 +153,7 @@ export function TenantList({
                         disabled={isUpdating[tenant.id]}
                       >
                         <Power className="h-4 w-4 mr-2" />
-                        {tenant.isActive ? 'Deactivate' : 'Activate'}
+                        {isActive ? 'Deactivate' : 'Activate'}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

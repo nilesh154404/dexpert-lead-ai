@@ -32,7 +32,6 @@ export class TenantsService {
 
   async findAll(page = 1, limit = 10) {
     const [data, total] = await this.tenantRepository.findAndCount({
-      where: { status: 'active' },
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: 'DESC' },

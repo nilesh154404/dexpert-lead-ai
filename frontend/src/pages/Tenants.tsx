@@ -22,41 +22,33 @@ export default function TenantManagement() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingTenant, setEditingTenant] = useState<TenantBranding | null>(null);
+  const [editingTenant, setEditingTenant] =
+    useState<TenantBranding | null>(null);
 
-  /* -------------------- Fetch Tenants -------------------- */
-  const { data: tenantsData, isLoading, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['tenants'],
-    queryFn: () => tenantsAdminApi.getAll(),
+    queryFn: tenantsAdminApi.getAll,
   });
 
-  const tenants = tenantsData?.data || [];
+  const tenants = data?.data || [];
 
-  /* -------------------- Search Filter -------------------- */
   const filteredTenants = tenants.filter(
-    (tenant) =>
-      tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      tenant.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (tenant.chatbotName &&
-        tenant.chatbotName.toLowerCase().includes(searchQuery.toLowerCase()))
+    (t) =>
+      t.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  /* -------------------- Create Tenant -------------------- */
   const createMutation = useMutation({
-    mutationFn: (data: any) => tenantsAdminApi.create(data),
+    mutationFn: tenantsAdminApi.create,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       setIsCreateDialogOpen(false);
       toast.success('Organization created successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create organization');
-    },
   });
 
-  /* -------------------- Update Tenant -------------------- */
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) =>
+    mutationFn: ({ id, data }: any) =>
       tenantsAdminApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
@@ -64,119 +56,58 @@ export default function TenantManagement() {
       setEditingTenant(null);
       toast.success('Organization updated successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update organization');
-    },
   });
 
-  /* -------------------- Activate / Deactivate Tenant -------------------- */
   const toggleStatusMutation = useMutation({
     mutationFn: (tenant: TenantBranding) =>
-      tenantsAdminApi.update(tenant.id, {
-        isActive: !tenant.isActive,
-      }),
+      tenant.isActive
+        ? tenantsAdminApi.deactivate(tenant.id)
+        : tenantsAdminApi.activate(tenant.id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       toast.success('Tenant status updated successfully!');
     },
-    onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update tenant status');
-    },
   });
-
-  /* -------------------- Handlers -------------------- */
-  const handleEdit = (tenant: TenantBranding) => {
-    setEditingTenant(tenant);
-    setIsEditDialogOpen(true);
-  };
 
   const handleToggleStatus = (tenant: TenantBranding) => {
     toggleStatusMutation.mutate(tenant);
   };
 
-  const handleCreateSubmit = async (data: any) => {
-    await createMutation.mutateAsync(data);
-  };
-
-  const handleUpdateSubmit = async (data: any) => {
-    if (editingTenant) {
-      await updateMutation.mutateAsync({
-        id: editingTenant.id,
-        data,
-      });
-    }
-  };
-
-  /* -------------------- Error State -------------------- */
   if (error) {
     return (
-      <AppLayout title="Tenants" subtitle="Manage all organizations and their branding">
-        <div className="text-center py-12">
-          <p className="text-lg font-semibold text-red-600 mb-2">
-            Failed to load tenants
-          </p>
-          <p className="text-gray-600">
-            {(error as any)?.message || 'Please try again'}
-          </p>
-        </div>
+      <AppLayout title="Tenants" subtitle="Manage organizations">
+        Failed to load tenants
       </AppLayout>
     );
   }
 
   return (
-    <AppLayout title="Tenants" subtitle="Manage all organizations and their branding">
-      {/* Header Actions */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+    <AppLayout title="Tenants" subtitle="Manage all organizations">
+      <div className="flex gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
           <Input
-            placeholder="Search tenants by name, ID, or chatbot name..."
             className="pl-9"
+            placeholder="Search tenants..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Button variant="ai" onClick={() => setIsCreateDialogOpen(true)}>
+        <Button onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           New Tenant
         </Button>
       </div>
 
-      {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Total Tenants</p>
-          <p className="text-2xl font-semibold mt-1">{tenants.length}</p>
-        </div>
-        <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-muted-foreground">With Chatbot</p>
-          <p className="text-2xl font-semibold mt-1 text-emerald-600">
-            {tenants.filter((t) => t.chatbotName).length}
-          </p>
-        </div>
-        <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Search Results</p>
-          <p className="text-2xl font-semibold mt-1 text-blue-600">
-            {filteredTenants.length}
-          </p>
-        </div>
-        <div className="rounded-xl border bg-card p-4">
-          <p className="text-sm text-muted-foreground">Custom Branding</p>
-          <p className="text-2xl font-semibold mt-1 text-violet-600">
-            {tenants.filter((t) => t.logo).length}
-          </p>
-        </div>
-      </div>
-
-      {/* Tenant List */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        </div>
+        <Loader2 className="animate-spin mx-auto" />
       ) : (
         <TenantList
           tenants={filteredTenants}
-          onEdit={handleEdit}
+          onEdit={(t) => {
+            setEditingTenant(t);
+            setIsEditDialogOpen(true);
+          }}
           onToggleStatus={handleToggleStatus}
           isUpdating={{
             [toggleStatusMutation.variables?.id || '']:
@@ -185,37 +116,35 @@ export default function TenantManagement() {
         />
       )}
 
-      {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Create New Tenant</DialogTitle>
-            <DialogDescription>
-              Set up a new tenant with branding and chatbot configuration
-            </DialogDescription>
+            <DialogTitle>Create Tenant</DialogTitle>
+            <DialogDescription />
           </DialogHeader>
           <TenantForm
-            onSubmit={handleCreateSubmit}
+            onSubmit={createMutation.mutateAsync}
             isLoading={createMutation.isPending}
           />
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Tenant</DialogTitle>
-            <DialogDescription>
-              Update tenant details and branding
-            </DialogDescription>
+            <DialogDescription />
           </DialogHeader>
           {editingTenant && (
             <TenantForm
-              onSubmit={handleUpdateSubmit}
-              isLoading={updateMutation.isPending}
               defaultValues={editingTenant}
               isEditMode
+              onSubmit={(data) =>
+                updateMutation.mutateAsync({
+                  id: editingTenant.id,
+                  data,
+                })
+              }
             />
           )}
         </DialogContent>
@@ -223,4 +152,3 @@ export default function TenantManagement() {
     </AppLayout>
   );
 }
-

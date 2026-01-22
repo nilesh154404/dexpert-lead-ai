@@ -1,20 +1,38 @@
 import { apiClient } from '../api-client';
 
+/**
+ * =========================
+ * TYPES
+ * =========================
+ */
+
 export interface TenantBranding {
   id: string;
   name: string;
+
   email?: string | null;
   phone?: string | null;
+
   logo?: string | null;
   logomark?: string | null;
+
   primaryColor?: string;
   accentColor?: string;
   fontFamily?: string | null;
+
   welcomeMessage?: string | null;
   chatbotName?: string | null;
   chatbotAvatar?: string | null;
-}
 
+  /** 🔴 REQUIRED FOR STATUS TOGGLE */
+  status: 'active' | 'inactive';
+
+  /** 🟢 UI convenience flag */
+  isActive: boolean;
+
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface CreateTenantDto {
   name: string;
@@ -45,51 +63,77 @@ export interface TenantsListResponse {
   total: number;
 }
 
-// Admin-level tenant management API
+/**
+ * =========================
+ * ADMIN TENANT API
+ * =========================
+ */
+
 export const tenantsAdminApi = {
   /**
-   * Get all tenants (SUPER_ADMIN only)
+   * Get all tenants (SUPER_ADMIN)
    */
   getAll: async (): Promise<TenantsListResponse> => {
     return apiClient.get<TenantsListResponse>('/tenants');
   },
 
   /**
-   * Get a specific tenant by ID
+   * Get tenant by ID
    */
   getById: async (id: string): Promise<TenantBranding> => {
     return apiClient.get<TenantBranding>(`/tenants/${id}`);
   },
 
   /**
-   * Create a new tenant (SUPER_ADMIN only)
+   * Create tenant
    */
   create: async (data: CreateTenantDto): Promise<TenantBranding> => {
     return apiClient.post<TenantBranding>('/tenants', data);
   },
 
   /**
-   * Update a tenant (SUPER_ADMIN only)
+   * Update tenant branding (NOT status)
    */
-  update: async (id: string, data: UpdateTenantDto): Promise<TenantBranding> => {
+  update: async (
+    id: string,
+    data: UpdateTenantDto
+  ): Promise<TenantBranding> => {
     return apiClient.patch<TenantBranding>(`/tenants/${id}`, data);
   },
 
   /**
-   * Delete a tenant (SUPER_ADMIN only)
+   * 🔴 DEACTIVATE tenant
    */
-  delete: async (id: string): Promise<void> => {
-    return apiClient.delete<void>(`/tenants/${id}`);
+  deactivate: async (id: string): Promise<TenantBranding> => {
+    return apiClient.patch<TenantBranding>(
+      `/tenants/${id}/deactivate`
+    );
+  },
+
+  /**
+   * 🟢 ACTIVATE tenant
+   */
+  activate: async (id: string): Promise<TenantBranding> => {
+    return apiClient.patch<TenantBranding>(
+      `/tenants/${id}/activate`
+    );
   },
 };
 
-// User-level tenant API (get own tenant)
+/**
+ * =========================
+ * USER TENANT API
+ * =========================
+ */
+
 export const tenantsApi = {
   getCurrent: async (): Promise<TenantBranding> => {
     return apiClient.get<TenantBranding>('/tenants/me');
   },
 
-  update: async (data: UpdateTenantDto): Promise<TenantBranding> => {
+  update: async (
+    data: UpdateTenantDto
+  ): Promise<TenantBranding> => {
     return apiClient.patch<TenantBranding>('/tenants/me', data);
   },
 };
