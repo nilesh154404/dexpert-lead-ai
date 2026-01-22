@@ -1,7 +1,7 @@
 import { TenantBranding } from '@/lib/api/tenants-admin.api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit2, Trash2, Globe, MoreHorizontal } from 'lucide-react';
+import { Edit2, Power, Globe, MoreHorizontal } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { hslToHex } from '@/lib/color-utils';
 import {
@@ -22,11 +22,16 @@ import {
 interface TenantListProps {
   tenants: TenantBranding[];
   onEdit: (tenant: TenantBranding) => void;
-  onDelete: (tenant: TenantBranding) => void;
-  isDeleting?: { [key: string]: boolean };
+  onToggleStatus: (tenant: TenantBranding) => void;
+  isUpdating?: { [key: string]: boolean };
 }
 
-export function TenantList({ tenants, onEdit, onDelete, isDeleting = {} }: TenantListProps) {
+export function TenantList({
+  tenants,
+  onEdit,
+  onToggleStatus,
+  isUpdating = {},
+}: TenantListProps) {
   if (tenants.length === 0) {
     return (
       <div className="rounded-xl border bg-card p-12 text-center">
@@ -61,10 +66,14 @@ export function TenantList({ tenants, onEdit, onDelete, isDeleting = {} }: Tenan
                 <TableCell>
                   <div className="flex items-center gap-3">
                     {tenant.logo ? (
-                      <img src={tenant.logo} alt={tenant.name} className="h-9 w-9 rounded-full object-cover bg-secondary" />
+                      <img
+                        src={tenant.logo}
+                        alt={tenant.name}
+                        className="h-9 w-9 rounded-full object-cover bg-secondary"
+                      />
                     ) : (
                       <div className="h-9 w-9 rounded-full bg-secondary flex items-center justify-center text-sm font-medium">
-                        {tenant.name.split(" ").map(n => n[0]).join("")}
+                        {tenant.name.split(' ').map(n => n[0]).join('')}
                       </div>
                     )}
                     <div>
@@ -73,22 +82,20 @@ export function TenantList({ tenants, onEdit, onDelete, isDeleting = {} }: Tenan
                     </div>
                   </div>
                 </TableCell>
+
                 <TableCell>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-6 h-6 rounded border border-gray-300"
-                        style={{ backgroundColor: primaryHex }}
-                        title="Primary color"
-                      />
-                      <div
-                        className="w-6 h-6 rounded border border-gray-300"
-                        style={{ backgroundColor: accentHex }}
-                        title="Accent color"
-                      />
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="w-6 h-6 rounded border border-gray-300"
+                      style={{ backgroundColor: primaryHex }}
+                    />
+                    <div
+                      className="w-6 h-6 rounded border border-gray-300"
+                      style={{ backgroundColor: accentHex }}
+                    />
                   </div>
                 </TableCell>
+
                 <TableCell>
                   {tenant.chatbotName ? (
                     <Badge variant="outline">{tenant.chatbotName}</Badge>
@@ -96,9 +103,11 @@ export function TenantList({ tenants, onEdit, onDelete, isDeleting = {} }: Tenan
                     <span className="text-sm text-muted-foreground">—</span>
                   )}
                 </TableCell>
+
                 <TableCell className="text-sm text-muted-foreground">
                   {timeAgo}
                 </TableCell>
+
                 <TableCell>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -111,13 +120,13 @@ export function TenantList({ tenants, onEdit, onDelete, isDeleting = {} }: Tenan
                         <Edit2 className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={() => onDelete(tenant)}
-                        disabled={isDeleting[tenant.id]}
-                        className="text-destructive"
+
+                      <DropdownMenuItem
+                        onClick={() => onToggleStatus(tenant)}
+                        disabled={isUpdating[tenant.id]}
                       >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
+                        <Power className="h-4 w-4 mr-2" />
+                        {tenant.isActive ? 'Deactivate' : 'Activate'}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
