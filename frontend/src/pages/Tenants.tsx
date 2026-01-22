@@ -13,27 +13,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Loader2, Plus, Search } from 'lucide-react';
 
 export default function TenantManagement() {
   const queryClient = useQueryClient();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTenant, setEditingTenant] = useState<TenantBranding | null>(null);
-  const [deletingTenant, setDeletingTenant] = useState<TenantBranding | null>(null);
 
-  // Fetch all tenants
+  /* -------------------- Fetch Tenants -------------------- */
   const { data: tenantsData, isLoading, error } = useQuery({
     queryKey: ['tenants'],
     queryFn: () => tenantsAdminApi.getAll(),
@@ -41,16 +32,18 @@ export default function TenantManagement() {
 
   const tenants = tenantsData?.data || [];
 
-  // Filter tenants by search query
-  const filteredTenants = tenants.filter((tenant) =>
-    tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    tenant.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (tenant.chatbotName && tenant.chatbotName.toLowerCase().includes(searchQuery.toLowerCase()))
+  /* -------------------- Search Filter -------------------- */
+  const filteredTenants = tenants.filter(
+    (tenant) =>
+      tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tenant.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (tenant.chatbotName &&
+        tenant.chatbotName.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  // Create tenant mutation
+  /* -------------------- Create Tenant -------------------- */
   const createMutation = useMutation({
-    mutationFn: (data) => tenantsAdminApi.create(data),
+    mutationFn: (data: any) => tenantsAdminApi.create(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       setIsCreateDialogOpen(false);
@@ -61,7 +54,7 @@ export default function TenantManagement() {
     },
   });
 
-  // Update tenant mutation
+  /* -------------------- Update Tenant -------------------- */
   const updateMutation = useMutation({
     mutationFn: ({ id, data }: { id: string; data: any }) =>
       tenantsAdminApi.update(id, data),
@@ -76,26 +69,29 @@ export default function TenantManagement() {
     },
   });
 
-  // Delete tenant mutation
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => tenantsAdminApi.delete(id),
+  /* -------------------- Activate / Deactivate Tenant -------------------- */
+  const toggleStatusMutation = useMutation({
+    mutationFn: (tenant: TenantBranding) =>
+      tenantsAdminApi.update(tenant.id, {
+        isActive: !tenant.isActive,
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
-      setDeletingTenant(null);
-      toast.success('Organization deleted successfully!');
+      toast.success('Tenant status updated successfully!');
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to delete organization');
+      toast.error(error.response?.data?.message || 'Failed to update tenant status');
     },
   });
 
+  /* -------------------- Handlers -------------------- */
   const handleEdit = (tenant: TenantBranding) => {
     setEditingTenant(tenant);
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = (tenant: TenantBranding) => {
-    setDeletingTenant(tenant);
+  const handleToggleStatus = (tenant: TenantBranding) => {
+    toggleStatusMutation.mutate(tenant);
   };
 
   const handleCreateSubmit = async (data: any) => {
@@ -111,18 +107,17 @@ export default function TenantManagement() {
     }
   };
 
-  const handleConfirmDelete = () => {
-    if (deletingTenant) {
-      deleteMutation.mutate(deletingTenant.id);
-    }
-  };
-
+  /* -------------------- Error State -------------------- */
   if (error) {
     return (
       <AppLayout title="Tenants" subtitle="Manage all organizations and their branding">
         <div className="text-center py-12">
-          <p className="text-lg font-semibold text-red-600 mb-2">Failed to load tenants</p>
-          <p className="text-gray-600">{(error as any)?.message || 'Please try again'}</p>
+          <p className="text-lg font-semibold text-red-600 mb-2">
+            Failed to load tenants
+          </p>
+          <p className="text-gray-600">
+            {(error as any)?.message || 'Please try again'}
+          </p>
         </div>
       </AppLayout>
     );
@@ -147,7 +142,7 @@ export default function TenantManagement() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
         <div className="rounded-xl border bg-card p-4">
           <p className="text-sm text-muted-foreground">Total Tenants</p>
@@ -161,7 +156,9 @@ export default function TenantManagement() {
         </div>
         <div className="rounded-xl border bg-card p-4">
           <p className="text-sm text-muted-foreground">Search Results</p>
-          <p className="text-2xl font-semibold mt-1 text-blue-600">{filteredTenants.length}</p>
+          <p className="text-2xl font-semibold mt-1 text-blue-600">
+            {filteredTenants.length}
+          </p>
         </div>
         <div className="rounded-xl border bg-card p-4">
           <p className="text-sm text-muted-foreground">Custom Branding</p>
@@ -171,24 +168,24 @@ export default function TenantManagement() {
         </div>
       </div>
 
-      {/* Loading State */}
+      {/* Tenant List */}
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
         </div>
       ) : (
-        /* Tenant List */
         <TenantList
           tenants={filteredTenants}
           onEdit={handleEdit}
-          onDelete={handleDelete}
-          isDeleting={{
-            [deletingTenant?.id || '']: deleteMutation.isPending,
+          onToggleStatus={handleToggleStatus}
+          isUpdating={{
+            [toggleStatusMutation.variables?.id || '']:
+              toggleStatusMutation.isPending,
           }}
         />
       )}
 
-      {/* Create Tenant Dialog */}
+      {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -204,12 +201,14 @@ export default function TenantManagement() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Tenant Dialog */}
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Tenant</DialogTitle>
-            <DialogDescription>Update tenant details and branding</DialogDescription>
+            <DialogDescription>
+              Update tenant details and branding
+            </DialogDescription>
           </DialogHeader>
           {editingTenant && (
             <TenantForm
@@ -221,30 +220,7 @@ export default function TenantManagement() {
           )}
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deletingTenant} onOpenChange={() => setDeletingTenant(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Tenant?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete <span className="font-semibold">{deletingTenant?.name}</span>?
-              This action cannot be undone and will remove all associated data.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="flex gap-3 justify-end">
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700"
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Delete
-            </AlertDialogAction>
-          </div>
-        </AlertDialogContent>
-      </AlertDialog>
     </AppLayout>
   );
 }
+

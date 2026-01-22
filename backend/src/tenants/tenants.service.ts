@@ -10,32 +10,32 @@ import { UpdateTenantDto } from './dto/update-tenant.dto';
 export class TenantsService {
   constructor(
     @InjectRepository(Tenant)
-    private tenantRepository: Repository<Tenant>,
+    private readonly tenantRepository: Repository<Tenant>,
     @InjectRepository(User)
-    private userRepository: Repository<User>,
+    private readonly userRepository: Repository<User>,
   ) {}
 
   async create(createTenantDto: CreateTenantDto): Promise<Tenant> {
-    // Check if tenant with same name already exists
     const existingTenant = await this.tenantRepository.findOne({
       where: { name: createTenantDto.name },
     });
 
     if (existingTenant) {
-      throw new BadRequestException(`Tenant with name "${createTenantDto.name}" already exists`);
+      throw new BadRequestException(
+        `Tenant with name "${createTenantDto.name}" already exists`,
+      );
     }
 
     const tenant = this.tenantRepository.create(createTenantDto);
     return this.tenantRepository.save(tenant);
   }
 
-  async findAll(page: number = 1, limit: number = 10): Promise<{ data: Tenant[]; total: number; page: number; limit: number }> {
+  async findAll(page = 1, limit = 10) {
     const [data, total] = await this.tenantRepository.findAndCount({
+      where: { status: 'active' },
       skip: (page - 1) * limit,
       take: limit,
-      order: {
-        createdAt: 'DESC',
-      },
+      order: { createdAt: 'DESC' },
     });
 
     return {
@@ -58,26 +58,39 @@ export class TenantsService {
     return tenant;
   }
 
+  // ✅ SINGLE, CORRECT UPDATE METHOD
   async update(id: string, updateTenantDto: UpdateTenantDto): Promise<Tenant> {
     const tenant = await this.findOne(id);
+
+    // 🔁 Map frontend isActive → backend status
+    if (typeof (updateTenantDto as any).isActive === 'boolean') {
+      tenant.status = (updateTenantDto as any).isActive ? 'active' : 'inactive';
+      delete (updateTenantDto as any).isActive;
+    }
+
     Object.assign(tenant, updateTenantDto);
     return this.tenantRepository.save(tenant);
   }
 
-  async remove(id: string): Promise<void> {
+  async deactivate(id: string): Promise<Tenant> {
     const tenant = await this.findOne(id);
-    
-    // Check if tenant has associated users
-    const userCount = await this.userRepository.count({
-      where: { tenantId: id },
-    });
 
-    if (userCount > 0) {
-      throw new BadRequestException(
-        `Cannot delete tenant with ID ${id} because it has ${userCount} associated user(s). Please remove all users first.`
-      );
+    if (tenant.status === 'inactive') {
+      throw new BadRequestException('Tenant is already inactive');
     }
 
-    await this.tenantRepository.remove(tenant);
+    tenant.status = 'inactive';
+    return this.tenantRepository.save(tenant);
+  }
+
+  async activate(id: string): Promise<Tenant> {
+    const tenant = await this.findOne(id);
+
+    if (tenant.status === 'active') {
+      throw new BadRequestException('Tenant is already active');
+    }
+
+    tenant.status = 'active';
+    return this.tenantRepository.save(tenant);
   }
 }

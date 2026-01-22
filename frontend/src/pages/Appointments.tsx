@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Clock, User, Video, Phone, Sparkles, ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { Calendar, Clock, User, Video, Phone, Sparkles, ChevronLeft, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { appointmentsApi, Appointment, AvailableSlot } from "@/lib/api/appointments.api";
 import { leadsApi, Lead } from "@/lib/api/leads.api";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri"];
 
@@ -47,6 +48,7 @@ function getTimeSlots(): string[] {
 }
 
 export default function Appointments() {
+  const { user } = useAuth();
   const [currentWeek, setCurrentWeek] = useState(new Date());
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
@@ -54,12 +56,13 @@ export default function Appointments() {
   const [isLoading, setIsLoading] = useState(true);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string; staffId?: string } | null>(null);
+  const [editingAppointmentId, setEditingAppointmentId] = useState<string | null>(null);
   const [bookingForm, setBookingForm] = useState({
-    leadId: "",
     title: "",
     duration: "30 min",
     type: "video" as "video" | "phone" | "in-person",
     aiNote: "",
+    leadId: "",
   });
   const { toast } = useToast();
 
@@ -75,13 +78,9 @@ export default function Appointments() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      // Fetch appointments and leads
-      const [apptsData, leadsData] = await Promise.all([
-        appointmentsApi.getAll(startDate, endDate),
-        leadsApi.getAll({ limit: 100 }),
-      ]);
+      // Fetch appointments for the week
+      const apptsData = await appointmentsApi.getAll(startDate, endDate);
       setAppointments(apptsData);
-      setLeads(leadsData.data);
 
       // Fetch available slots for each day of the week
       const slotsPromises = weekDates.map((date) =>
@@ -90,6 +89,10 @@ export default function Appointments() {
       const slotsResults = await Promise.all(slotsPromises);
       const allSlots = slotsResults.flat();
       setAvailableSlots(allSlots);
+
+      // Fetch leads for dropdown
+      const leadsResponse = await leadsApi.getAll({ limit: 100 });
+      setLeads(leadsResponse.data || []);
     } catch (error) {
       console.error("Failed to load appointments:", error);
       toast({
@@ -105,25 +108,50 @@ export default function Appointments() {
   const handleSlotClick = (date: Date, time: string) => {
     const dateStr = date.toISOString().split("T")[0];
     const slot = availableSlots.find((s: any) => s.date === dateStr && s.time === time);
-    // Allow booking if at least one staff is available (up to 3 customers can book same slot)
     if (slot && slot.availableStaff && slot.availableStaff.length > 0) {
       setSelectedSlot({ date: dateStr, time });
       setBookingForm({
-        leadId: "",
         title: "",
         duration: "30 min",
         type: "video",
         aiNote: "",
+        leadId: "",
       });
+      setEditingAppointmentId(null);
       setIsBookingOpen(true);
     }
   };
 
+  const handleEditClick = (apt: Appointment) => {
+    setSelectedSlot({ date: apt.date, time: apt.time });
+    setBookingForm({
+      title: apt.title,
+      duration: apt.duration,
+      type: apt.type,
+      aiNote: apt.aiNote || "",
+      leadId: apt.leadId || "",
+    });
+    setEditingAppointmentId(apt.id);
+    setIsBookingOpen(true);
+  };
+
+  const handleDeleteClick = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this appointment?")) return;
+    try {
+      await appointmentsApi.delete(id);
+      toast({ title: "Success", description: "Appointment deleted successfully" });
+      loadData();
+    } catch (error) {
+      console.error("Failed to delete appointment:", error);
+      toast({ title: "Error", description: "Failed to delete appointment", variant: "destructive" });
+    }
+  };
+
   const handleBookingSubmit = async () => {
-    if (!selectedSlot || !bookingForm.leadId || !bookingForm.title) {
+    if (!selectedSlot || !bookingForm.title || !bookingForm.leadId) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields",
+        description: "Please select a lead, time slot, and enter a title",
         variant: "destructive",
       });
       return;
@@ -145,33 +173,41 @@ export default function Appointments() {
         return;
       }
 
-      // Auto-assign to first available staff
-      const assignedStaff = slot.availableStaff[0];
-
-      await appointmentsApi.create({
-        leadId: bookingForm.leadId,
+      // Admin only needs to provide date, time, title, duration, type, and notes
+      // Backend will auto-assign the first available staff
+      const appointmentData = {
         title: bookingForm.title,
         date: selectedSlot.date,
         time: selectedSlot.time,
         duration: bookingForm.duration,
         type: bookingForm.type,
-        staffId: assignedStaff.id,
         aiNote: bookingForm.aiNote || undefined,
-      });
+        leadId: bookingForm.leadId,
+      };
 
-      toast({
-        title: "Success",
-        description: `Appointment booked with ${assignedStaff.name}`,
-      });
+      if (editingAppointmentId) {
+        await appointmentsApi.update(editingAppointmentId, appointmentData);
+        toast({
+          title: "Success",
+          description: "Appointment updated successfully!",
+        });
+      } else {
+        await appointmentsApi.create(appointmentData);
+        toast({
+          title: "Success",
+          description: "Appointment booked successfully! Staff will be automatically assigned.",
+        });
+      }
 
       setIsBookingOpen(false);
       setSelectedSlot(null);
+      setEditingAppointmentId(null);
       setBookingForm({
-        leadId: "",
         title: "",
         duration: "30 min",
         type: "video",
         aiNote: "",
+        leadId: "",
       });
       loadData();
     } catch (error: any) {
@@ -249,12 +285,13 @@ export default function Appointments() {
           <Button variant="ai" onClick={() => {
             setSelectedSlot(null);
             setBookingForm({
-              leadId: "",
               title: "",
               duration: "30 min",
               type: "video",
               aiNote: "",
+              leadId: "",
             });
+            setEditingAppointmentId(null);
             setIsBookingOpen(true);
           }}>
             <Plus className="h-4 w-4 mr-2" />
@@ -306,8 +343,8 @@ export default function Appointments() {
                     const slotAppointments = getAppointmentsForSlot(date, time);
                     const slotInfo = getSlotInfo(date, time);
                     const hasAvailableStaff = slotInfo.availableStaff.length > 0;
-                    const slotHasAppointments = slotAppointments.length > 0;
-                    const isSlotAvailable = hasAvailableStaff && !slotHasAppointments;
+                    // Slot is available if there are available staff members, regardless of existing appointments
+                    const isSlotAvailable = hasAvailableStaff;
 
                     return (
                       <div
@@ -317,31 +354,61 @@ export default function Appointments() {
                           isSlotAvailable && "bg-ai/5"
                         )}
                       >
-                        {slotHasAppointments ? (
+                        {slotAppointments.length > 0 ? (
                           <div className="space-y-1 flex-1">
-                            {slotAppointments.map((apt) => (
-                              <div
-                                key={apt.id}
-                                className="rounded-lg bg-primary/10 border border-primary/20 p-2 text-xs"
-                              >
-                                <div className="flex items-center justify-between">
-                                  <span className="font-medium truncate">{apt.lead?.name || "Unknown"}</span>
-                                  {apt.type === "video" ? (
-                                    <Video className="h-3 w-3 text-muted-foreground" />
-                                  ) : apt.type === "phone" ? (
-                                    <Phone className="h-3 w-3 text-muted-foreground" />
-                                  ) : (
-                                    <User className="h-3 w-3 text-muted-foreground" />
+                            {slotAppointments.map((apt) => {
+                              // Determine display name logic
+                              // If lead is present, show lead name
+                              // If lead is missing (e.g. manual booking/placeholder):
+                              // - If viewer is admin/org/super_admin -> Show Staff Name
+                              // - If viewer is staff -> Show Admin Name
+                              const isAdminView = ["super_admin", "organisation", "admin"].includes(user?.role || "");
+                              const displayName = apt.lead?.name
+                                ? apt.lead.name
+                                : (isAdminView ? (apt.staff?.name || "Unknown Staff") : (apt.admin?.name || "Unknown Admin"));
+
+                              return (
+                                <div
+                                  key={apt.id}
+                                  className="rounded-lg bg-primary/10 border border-primary/20 p-2 text-xs group relative"
+                                >
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span className="font-bold text-sm truncate">{displayName}</span>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      {apt.type === "video" ? (
+                                        <Video className="h-3 w-3 text-muted-foreground" />
+                                      ) : apt.type === "phone" ? (
+                                        <Phone className="h-3 w-3 text-muted-foreground" />
+                                      ) : (
+                                        <User className="h-3 w-3 text-muted-foreground" />
+                                      )}
+                                      <div className="flex gap-1 ml-1 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handleEditClick(apt); }}
+                                          className="text-muted-foreground hover:text-primary"
+                                          title="Edit"
+                                        >
+                                          <Pencil className="h-3 w-3" />
+                                        </button>
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); handleDeleteClick(apt.id); }}
+                                          className="text-muted-foreground hover:text-destructive"
+                                          title="Delete"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  {apt.lead?.company && (
+                                    <p className="text-muted-foreground truncate">{apt.lead.company}</p>
+                                  )}
+                                  {apt.staff && (
+                                    <p className="text-muted-foreground truncate mt-0.5">Staff: {apt.staff.name}</p>
                                   )}
                                 </div>
-                                {apt.lead?.company && (
-                                  <p className="text-muted-foreground truncate">{apt.lead.company}</p>
-                                )}
-                                {apt.staff && (
-                                  <p className="text-muted-foreground truncate text-[10px]">Staff: {apt.staff.name}</p>
-                                )}
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         ) : null}
                         {isSlotAvailable && (
@@ -355,9 +422,9 @@ export default function Appointments() {
                             <p className="text-[11px] text-ai mt-1 font-semibold">Book</p>
                           </button>
                         )}
-                        {slotHasAppointments && !isSlotAvailable && (
+                        {slotAppointments.length > 0 && !isSlotAvailable && (
                           <div className="text-[10px] text-muted-foreground text-center py-2">
-                            <p className="font-semibold">Booked</p>
+                            <p className="font-semibold">Booked (No Staff)</p>
                           </div>
                         )}
                       </div>
@@ -376,50 +443,71 @@ export default function Appointments() {
           <DialogHeader>
             <DialogTitle>Book Appointment</DialogTitle>
             <DialogDescription>
-              {selectedSlot ? `Schedule for ${new Date(selectedSlot.date).toLocaleDateString()} at ${formatTime(selectedSlot.time)}` : "Select a date and time from the calendar or dropdown above"}
+              {selectedSlot ? `Schedule for ${new Date(selectedSlot.date).toLocaleDateString()} at ${formatTime(selectedSlot.time)}` : "Select a date and time from the calendar above"}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-3 max-h-96 overflow-y-auto">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
+              <p className="text-xs text-blue-800">
+                <strong>ℹ️ Auto-Assign:</strong> Staff will be automatically assigned to the first available team member.
+              </p>
+            </div>
+            {/* Added Lead Selection */}
             <div className="space-y-2">
-              <Label htmlFor="lead">Lead *</Label>
+              <Label htmlFor="lead">Select Lead *</Label>
               <Select value={bookingForm.leadId} onValueChange={(value) => setBookingForm({ ...bookingForm, leadId: value })}>
                 <SelectTrigger id="lead">
-                  <SelectValue placeholder="Select a lead" />
+                  <SelectValue placeholder="Select a lead..." />
                 </SelectTrigger>
                 <SelectContent>
                   {leads.map((lead) => (
                     <SelectItem key={lead.id} value={lead.id}>
-                      {lead.name} {lead.company && `(${lead.company})`}
+                      {lead.name} {lead.company ? `(${lead.company})` : ""}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="timeSlot">Date & Time *</Label>
-              <Select
-                value={selectedSlot ? `${selectedSlot.date}|${selectedSlot.time}` : ""}
-                onValueChange={(value) => {
-                  const [date, time] = value.split("|");
-                  setSelectedSlot({ date, time });
-                }}
-              >
-                <SelectTrigger id="timeSlot">
-                  <SelectValue placeholder="Select a date and time" />
-                </SelectTrigger>
-                <SelectContent className="max-h-64">
-                  {getAvailableTimeSlotsForDropdown().map((slot) => (
-                    <SelectItem key={slot.key} value={slot.key}>
-                      {slot.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-2">
-              <p className="text-xs text-blue-800">
-                <strong>ℹ️ Auto-Assign:</strong> Staff will be automatically assigned on the backend.
-              </p>
+              <Label>Date & Time</Label>
+              {selectedSlot ? (
+                <div className="p-2 bg-muted rounded text-sm">
+                  <p className="font-semibold">{new Date(selectedSlot.date).toLocaleDateString()}</p>
+                  <p className="text-muted-foreground">{formatTime(selectedSlot.time)}</p>
+                  <Button
+                    variant="link"
+                    className="h-auto p-0 text-xs mt-1"
+                    onClick={() => setSelectedSlot(null)}
+                  >
+                    Change Slot
+                  </Button>
+                </div>
+              ) : (
+                <Select
+                  onValueChange={(value) => {
+                    const [date, time] = value.split("|");
+                    setSelectedSlot({ date, time });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a date and time..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getAvailableTimeSlotsForDropdown().length > 0 ? (
+                      getAvailableTimeSlotsForDropdown().map((slot: any) => (
+                        <SelectItem key={slot.key} value={`${slot.date}|${slot.time}`}>
+                          {slot.label} ({slot.availableStaffCount} staff available)
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <div className="p-2 text-sm text-muted-foreground text-center">
+                        No slots available for this week
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="title">Title *</Label>
@@ -427,7 +515,7 @@ export default function Appointments() {
                 id="title"
                 value={bookingForm.title}
                 onChange={(e) => setBookingForm({ ...bookingForm, title: e.target.value })}
-                placeholder="e.g., Product Demo"
+                placeholder="e.g., Product Demo, Client Meeting"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -473,7 +561,9 @@ export default function Appointments() {
             <Button variant="outline" onClick={() => setIsBookingOpen(false)}>
               Cancel
             </Button>
-            <Button onClick={handleBookingSubmit}>Book Appointment</Button>
+            <Button onClick={handleBookingSubmit}>
+              Book Appointment
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -86,15 +86,19 @@ export class TenantsController {
     return this.tenantsService.update(id, updateTenantDto);
   }
 
-  @Delete(':id')
-  @UseGuards(PermissionsGuard)
-  @RequirePermissions({ module: PermissionModule.TENANTS, action: PermissionAction.DELETE })
-  @ApiOperation({ summary: 'Delete a tenant by ID' })
-  @ApiResponse({ status: 200, description: 'Tenant successfully deleted' })
-  @ApiResponse({ status: 404, description: 'Tenant not found' })
-  @ApiResponse({ status: 400, description: 'Bad request - tenant has associated users' })
-  @ApiResponse({ status: 403, description: 'Forbidden - insufficient permissions' })
-  remove(@Param('id') id: string) {
-    return this.tenantsService.remove(id);
-  }
+@Patch(':id/deactivate')
+deactivate(@Param('id') id: string) {
+  return this.tenantsService.deactivate(id);
+}
+
+@Patch(':id/activate')
+activate(@Param('id') id: string) {
+  return this.tenantsService.activate(id);
+}
+
+
+
+
+
+
 }

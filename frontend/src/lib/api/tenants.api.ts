@@ -36,3 +36,5 @@ export const tenantsApi = {
     return apiClient.patch<TenantBranding>('/tenants/me', data);
   },
 };
+
+
