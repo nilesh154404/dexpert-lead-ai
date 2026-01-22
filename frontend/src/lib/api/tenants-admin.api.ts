@@ -24,11 +24,7 @@ export interface TenantBranding {
   chatbotName?: string | null;
   chatbotAvatar?: string | null;
 
-  /** 🔴 REQUIRED FOR STATUS TOGGLE */
-  status: 'active' | 'inactive';
-
-  /** 🟢 UI convenience flag */
-  isActive: boolean;
+ status: 'active' | 'inactive'; // ✅ ADD THIS
 
   createdAt: string;
   updatedAt: string;
@@ -104,20 +100,14 @@ export const tenantsAdminApi = {
   /**
    * 🔴 DEACTIVATE tenant
    */
-  deactivate: async (id: string): Promise<TenantBranding> => {
-    return apiClient.patch<TenantBranding>(
-      `/tenants/${id}/deactivate`
-    );
-  },
+ activate: async (id: string): Promise<TenantBranding> => {
+  return apiClient.patch(`/tenants/${id}/activate`);
+},
 
-  /**
-   * 🟢 ACTIVATE tenant
-   */
-  activate: async (id: string): Promise<TenantBranding> => {
-    return apiClient.patch<TenantBranding>(
-      `/tenants/${id}/activate`
-    );
-  },
+deactivate: async (id: string): Promise<TenantBranding> => {
+  return apiClient.patch(`/tenants/${id}/deactivate`);
+},
+
 };
 
 /**
@@ -135,5 +125,13 @@ export const tenantsApi = {
     data: UpdateTenantDto
   ): Promise<TenantBranding> => {
     return apiClient.patch<TenantBranding>('/tenants/me', data);
+  },
+
+   deactivate: async (id: string): Promise<void> => {
+    return apiClient.patch<void>(`/tenants/${id}/deactivate`);
+  },
+
+  activate: async (id: string): Promise<void> => {
+    return apiClient.patch<void>(`/tenants/${id}/activate`);
   },
 };

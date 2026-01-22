@@ -25,6 +25,9 @@ export default function TenantManagement() {
   const [editingTenant, setEditingTenant] =
     useState<TenantBranding | null>(null);
 
+  /* =======================
+     FETCH TENANTS
+  ======================== */
   const { data, isLoading, error } = useQuery({
     queryKey: ['tenants'],
     queryFn: tenantsAdminApi.getAll,
@@ -38,6 +41,9 @@ export default function TenantManagement() {
       t.id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  /* =======================
+     CREATE TENANT
+  ======================== */
   const createMutation = useMutation({
     mutationFn: tenantsAdminApi.create,
     onSuccess: () => {
@@ -47,8 +53,11 @@ export default function TenantManagement() {
     },
   });
 
+  /* =======================
+     UPDATE TENANT
+  ======================== */
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: any) =>
+    mutationFn: ({ id, data }: { id: string; data: any }) =>
       tenantsAdminApi.update(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
@@ -58,14 +67,24 @@ export default function TenantManagement() {
     },
   });
 
+  /* =======================
+     ACTIVATE / DEACTIVATE
+  ======================== */
   const toggleStatusMutation = useMutation({
-    mutationFn: (tenant: TenantBranding) =>
-      tenant.isActive
-        ? tenantsAdminApi.deactivate(tenant.id)
-        : tenantsAdminApi.activate(tenant.id),
+    mutationFn: (tenant: TenantBranding) => {
+      if (tenant.status === 'active') {
+        return tenantsAdminApi.deactivate(tenant.id);
+      }
+      return tenantsAdminApi.activate(tenant.id);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tenants'] });
       toast.success('Tenant status updated successfully!');
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message || 'Failed to update tenant status'
+      );
     },
   });
 
@@ -73,6 +92,9 @@ export default function TenantManagement() {
     toggleStatusMutation.mutate(tenant);
   };
 
+  /* =======================
+     ERROR STATE
+  ======================== */
   if (error) {
     return (
       <AppLayout title="Tenants" subtitle="Manage organizations">
@@ -81,8 +103,12 @@ export default function TenantManagement() {
     );
   }
 
+  /* =======================
+     UI
+  ======================== */
   return (
     <AppLayout title="Tenants" subtitle="Manage all organizations">
+      {/* Search + Create */}
       <div className="flex gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2" />
@@ -99,23 +125,29 @@ export default function TenantManagement() {
         </Button>
       </div>
 
+      {/* Table */}
       {isLoading ? (
         <Loader2 className="animate-spin mx-auto" />
       ) : (
         <TenantList
           tenants={filteredTenants}
-          onEdit={(t) => {
-            setEditingTenant(t);
+          onEdit={(tenant) => {
+            setEditingTenant(tenant);
             setIsEditDialogOpen(true);
           }}
           onToggleStatus={handleToggleStatus}
-          isUpdating={{
-            [toggleStatusMutation.variables?.id || '']:
-              toggleStatusMutation.isPending,
-          }}
+          isUpdating={
+            toggleStatusMutation.variables
+              ? {
+                  [toggleStatusMutation.variables.id]:
+                    toggleStatusMutation.isPending,
+                }
+              : {}
+          }
         />
       )}
 
+      {/* Create Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -129,6 +161,7 @@ export default function TenantManagement() {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>

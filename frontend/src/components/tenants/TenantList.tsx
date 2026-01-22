@@ -142,7 +142,9 @@ export function TenantList({
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
                         onClick={() => onEdit(tenant)}
-                        disabled={!isActive}
+                        // disabled={!isActive}
+                        disabled={tenant.status !== 'active'}
+
                       >
                         <Edit2 className="h-4 w-4 mr-2" />
                         Edit
