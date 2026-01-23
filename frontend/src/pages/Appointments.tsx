@@ -14,19 +14,36 @@ import { leadsApi, Lead } from "@/lib/api/leads.api";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
-const weekDays = ["Mon", "Tue", "Wed", "Thu", "Fri"];
-
 function getWeekDates(date: Date) {
-  const day = date.getDay();
-  const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Adjust to Monday
-  const monday = new Date(date.setDate(diff));
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
   const dates = [];
   for (let i = 0; i < 5; i++) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
     dates.push(d);
   }
   return dates;
+}
+
+function getSlotDateTime(date: Date, time: string): Date {
+  const [hours, minutes] = time.split(":");
+  const slotDate = new Date(date);
+  slotDate.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+  return slotDate;
+}
+
+function isSlotInPast(date: Date, time: string): boolean {
+  const now = new Date();
+  return getSlotDateTime(date, time) < now;
+}
+
+function isSlotInPastFromString(dateStr: string, time: string): boolean {
+  const [year, month, day] = dateStr.split("-").map((v) => parseInt(v, 10));
+  const date = new Date();
+  date.setFullYear(year, month - 1, day);
+  date.setHours(0, 0, 0, 0);
+  return isSlotInPast(date, time);
 }
 
 function formatTime(time: string): string {
@@ -241,6 +258,7 @@ export default function Appointments() {
   const getAvailableTimeSlotsForDropdown = () => {
     return availableSlots
       .filter((slot: any) => slot.availableStaff && slot.availableStaff.length > 0)
+      .filter((slot: any) => !isSlotInPastFromString(slot.date, slot.time))
       .map((slot: any) => ({
         date: slot.date,
         time: slot.time,
@@ -253,13 +271,13 @@ export default function Appointments() {
 
   const previousWeek = () => {
     const newDate = new Date(currentWeek);
-    newDate.setDate(newDate.getDate() - 7);
+    newDate.setDate(newDate.getDate() - 5);
     setCurrentWeek(newDate);
   };
 
   const nextWeek = () => {
     const newDate = new Date(currentWeek);
-    newDate.setDate(newDate.getDate() + 7);
+    newDate.setDate(newDate.getDate() + 5);
     setCurrentWeek(newDate);
   };
 
@@ -323,10 +341,12 @@ export default function Appointments() {
             {/* Days Header */}
             <div className="grid grid-cols-[80px_repeat(5,1fr)] border-b bg-secondary/30">
               <div className="p-3" />
-              {weekDays.map((day, idx) => (
-                <div key={day} className="p-3 text-center border-l">
-                  <p className="text-sm font-medium">{day}</p>
-                  <p className="text-2xl font-semibold mt-1">{weekDates[idx].getDate()}</p>
+              {weekDates.map((date) => (
+                <div key={date.toISOString()} className="p-3 text-center border-l">
+                  <p className="text-sm font-medium">
+                    {date.toLocaleDateString("en-US", { weekday: "short" })}
+                  </p>
+                  <p className="text-2xl font-semibold mt-1">{date.getDate()}</p>
                 </div>
               ))}
             </div>
@@ -338,17 +358,18 @@ export default function Appointments() {
                   <div className="p-3 text-xs text-muted-foreground flex items-start">
                     {formatTime(time)}
                   </div>
-                  {weekDays.map((day, dayIdx) => {
-                    const date = weekDates[dayIdx];
+                  {weekDates.map((date) => {
                     const slotAppointments = getAppointmentsForSlot(date, time);
                     const slotInfo = getSlotInfo(date, time);
                     const hasAvailableStaff = slotInfo.availableStaff.length > 0;
-                    // Slot is available if there are available staff members, regardless of existing appointments
-                    const isSlotAvailable = hasAvailableStaff;
+                    const isPast = isSlotInPast(date, time);
+                    // Slot is available for booking only if there are available staff members
+                    // and the slot is not in the past.
+                    const isSlotAvailable = hasAvailableStaff && !isPast;
 
                     return (
                       <div
-                        key={day}
+                        key={date.toISOString()}
                         className={cn(
                           "border-l p-2 transition-colors flex flex-col gap-1 min-h-[80px]",
                           isSlotAvailable && "bg-ai/5"
