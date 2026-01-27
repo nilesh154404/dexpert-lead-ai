@@ -3,6 +3,8 @@ import { apiClient } from '../api-client';
 export interface TenantBranding {
   id: string;
   name: string;
+  email:string;
+  
   logo?: string;
   logomark?: string;
   primaryColor: string;
@@ -36,5 +38,6 @@ export const tenantsApi = {
     return apiClient.patch<TenantBranding>('/tenants/me', data);
   },
 };
+
 
 

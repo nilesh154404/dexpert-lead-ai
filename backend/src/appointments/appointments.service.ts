@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Appointment } from '../entities/appointment.entity';
@@ -20,67 +20,7 @@ export class AppointmentsService {
     private userRepository: Repository<User>,
   ) {}
 
-  /* -------------------------------- HELPERS -------------------------------- */
-
-  private getEndTime(time: string, duration: string): string {
-    const [h, m] = time.split(':').map(Number);
-    const startMinutes = h * 60 + m;
-    const durationMinutes = parseInt(duration); // "30 min" → 30
-
-    const endMinutes = startMinutes + durationMinutes;
-    const endH = Math.floor(endMinutes / 60);
-    const endM = endMinutes % 60;
-
-    return `${endH.toString().padStart(2, '0')}:${endM
-      .toString()
-      .padStart(2, '0')}:00`;
-  }
-
-  /* -------------------------- STAFF AUTO ASSIGN ----------------------------- */
-
-  private async assignStaffToLead(
-    leadId: string,
-    tenantId: string,
-  ): Promise<string | null> {
-    const staffMembers = await this.userRepository.find({
-      where: { tenantId, status: 'active' as any },
-      relations: ['assignedLeads'],
-    });
-
-    const eligibleStaff = staffMembers.filter(
-      (u) =>
-        u.role !== UserRole.SUPER_ADMIN &&
-        u.role !== UserRole.ORGANISATION &&
-        u.status === 'active',
-    );
-
-    if (!eligibleStaff.length) return null;
-
-    const lead = await this.leadRepository.findOne({
-      where: { id: leadId },
-    });
-
-    if (lead?.assignedToId) return lead.assignedToId;
-
-    const staffWithCounts = eligibleStaff.map((s) => ({
-      id: s.id,
-      count: s.assignedLeads?.length || 0,
-    }));
-
-    staffWithCounts.sort((a, b) => a.count - b.count);
-
-    const assignedStaffId = staffWithCounts[0].id;
-
-    if (lead) {
-      lead.assignedToId = assignedStaffId;
-      await this.leadRepository.save(lead);
-    }
-
-    return assignedStaffId;
-  }
-
-  /* ------------------------------ CREATE ------------------------------------ */
-
+  /* ---------------- CREATE ---------------- */
   async create(
     dto: CreateAppointmentDto,
     tenantId: string,
@@ -89,61 +29,73 @@ export class AppointmentsService {
     const lead = await this.leadRepository.findOne({
       where: { id: dto.leadId, tenantId },
     });
+    if (!lead) throw new NotFoundException('Lead not found');
 
-    if (!lead) {
-      throw new NotFoundException('Lead not found');
+    const date = new Date(dto.date);
+
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const staffList = await this.userRepository.find({
+      where: { tenantId, status: 'active' as any },
+    });
+
+    const eligibleStaff = staffList
+      .filter(u =>
+        u.role === UserRole.SALES ||
+        u.role === UserRole.SUPPORT ||
+        u.role === UserRole.MANAGER
+      )
+      .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+
+    if (!eligibleStaff.length) {
+      throw new NotFoundException('No staff available');
     }
 
-    const appointmentEnd = this.getEndTime(dto.time, dto.duration);
-
-    const conflict = await this.appointmentRepository
+    const slotAppointments = await this.appointmentRepository
       .createQueryBuilder('appointment')
       .leftJoin('appointment.lead', 'lead')
-      .where('lead.tenantId = :tenantId', { tenantId })
-      .andWhere('appointment.date = :date', {
-        date: new Date(dto.date),
+      .where('appointment.time = :time', { time: dto.time })
+      .andWhere('appointment.date BETWEEN :start AND :end', {
+        start: startOfDay,
+        end: endOfDay,
       })
-      .andWhere('appointment.status = :status', {
-        status: 'scheduled',
-      })
-      .andWhere(
-        `
-        appointment.time < :endTime
-        AND
-        ADDTIME(appointment.time, appointment.duration) > :startTime
-        `,
-        {
-          startTime: dto.time,
-          endTime: appointmentEnd,
-        },
-      )
-      .getOne();
+      .andWhere('lead.tenantId = :tenantId', { tenantId })
+      .getMany();
 
-    if (conflict) {
-      throw new BadRequestException(
-        'Selected time slot overlaps with another appointment',
-      );
+    if (slotAppointments.length >= eligibleStaff.length) {
+      throw new NotFoundException('All staff already booked for this slot');
     }
 
-    let staffId = dto.staffId;
-    if (!staffId) {
-      staffId =
-        lead.assignedToId ||
-        (await this.assignStaffToLead(lead.id, tenantId)) ||
-        undefined;
+    const bookedStaffIds = slotAppointments.map(a => a.staffId);
+    const freeStaffOrdered = eligibleStaff.filter(
+      s => !bookedStaffIds.includes(s.id)
+    );
+
+    if (!freeStaffOrdered.length) {
+      throw new NotFoundException('No staff free for this slot');
+    }
+
+    const assignedStaffId = freeStaffOrdered[0].id;
+
+    if (!lead.assignedToId) {
+      lead.assignedToId = assignedStaffId;
+      await this.leadRepository.save(lead);
     }
 
     const appointment = this.appointmentRepository.create({
       ...dto,
-      date: new Date(dto.date),
-      staffId,
+      date,
+      staffId: assignedStaffId,
     });
 
     return this.appointmentRepository.save(appointment);
   }
 
-  /* ------------------------------ READ -------------------------------------- */
-
+  /* ---------------- FIND ALL ---------------- */
   async findAll(
     tenantId: string,
     role: UserRole,
@@ -154,8 +106,11 @@ export class AppointmentsService {
     const qb = this.appointmentRepository
       .createQueryBuilder('appointment')
       .leftJoinAndSelect('appointment.lead', 'lead')
-      .leftJoinAndSelect('appointment.staff', 'staff')
-      .where('lead.tenantId = :tenantId', { tenantId });
+      .leftJoinAndSelect('appointment.staff', 'staff');
+
+    if (role !== UserRole.SUPER_ADMIN) {
+      qb.where('lead.tenantId = :tenantId', { tenantId });
+    }
 
     if (role !== UserRole.SUPER_ADMIN && role !== UserRole.ORGANISATION) {
       qb.andWhere('appointment.staffId = :userId', { userId });
@@ -164,70 +119,63 @@ export class AppointmentsService {
     if (startDate) qb.andWhere('appointment.date >= :start', { start: startDate });
     if (endDate) qb.andWhere('appointment.date <= :end', { end: endDate });
 
-    return qb.orderBy('appointment.date', 'ASC').addOrderBy('appointment.time', 'ASC').getMany();
-  }
-async findByLead(
-  leadId: string,
-  tenantId: string,
-  userRole: UserRole,
-  userId?: string,
-) {
-  const lead = await this.leadRepository.findOne({
-    where: { id: leadId, tenantId },
-  });
-
-  if (!lead) {
-    throw new NotFoundException('Lead not found');
+    return qb.orderBy('appointment.date', 'ASC').getMany();
   }
 
-  // Staff can only see their own lead appointments
-  if (
-    userRole !== UserRole.SUPER_ADMIN &&
-    userRole !== UserRole.ORGANISATION
+  /* ---------------- FIND BY LEAD ---------------- */
+  async findByLead(
+    leadId: string,
+    tenantId: string,
+    role: UserRole,
+    userId?: string,
   ) {
-    if (lead.assignedToId !== userId) {
-      throw new NotFoundException('Lead not found');
+    const lead = await this.leadRepository.findOne({
+      where: { id: leadId, tenantId },
+    });
+
+    if (!lead) throw new NotFoundException('Lead not found');
+
+    if (role !== UserRole.SUPER_ADMIN && role !== UserRole.ORGANISATION) {
+      if (lead.assignedToId !== userId) {
+        throw new NotFoundException('Lead not found');
+      }
     }
+
+    return this.appointmentRepository.find({
+      where: { leadId },
+      relations: ['lead', 'staff'],
+      order: { date: 'ASC' },
+    });
   }
 
-  return this.appointmentRepository.find({
-    where: { leadId },
-    relations: ['lead', 'staff'],
-    order: {
-      date: 'ASC',
-      time: 'ASC',
-    },
-  });
-}
-
+  /* ---------------- FIND ONE ---------------- */
   async findOne(
     id: string,
     tenantId: string,
     role: UserRole,
     userId?: string,
-  ): Promise<Appointment> {
+  ) {
     const appointment = await this.appointmentRepository.findOne({
       where: { id },
       relations: ['lead', 'staff'],
     });
 
-    if (!appointment || appointment.lead.tenantId !== tenantId) {
+    if (!appointment) throw new NotFoundException('Appointment not found');
+
+    if (role !== UserRole.SUPER_ADMIN && appointment.lead.tenantId !== tenantId) {
       throw new NotFoundException('Appointment not found');
     }
 
-    if (
-      role !== UserRole.SUPER_ADMIN &&
-      role !== UserRole.ORGANISATION &&
-      appointment.staffId !== userId
-    ) {
-      throw new NotFoundException('Appointment not found');
+    if (role !== UserRole.SUPER_ADMIN && role !== UserRole.ORGANISATION) {
+      if (appointment.staffId !== userId) {
+        throw new NotFoundException('Appointment not found');
+      }
     }
 
     return appointment;
   }
 
-  /* ------------------------------ UPDATE ------------------------------------ */
-
+  /* ---------------- UPDATE ---------------- */
   async update(
     id: string,
     dto: UpdateAppointmentDto,
@@ -236,15 +184,11 @@ async findByLead(
     userId?: string,
   ) {
     const appointment = await this.findOne(id, tenantId, role, userId);
-
-    if (dto.date) appointment.date = new Date(dto.date);
-
     Object.assign(appointment, dto);
     return this.appointmentRepository.save(appointment);
   }
 
-  /* ------------------------------ DELETE ------------------------------------ */
-
+  /* ---------------- DELETE ---------------- */
   async remove(
     id: string,
     tenantId: string,
@@ -255,27 +199,19 @@ async findByLead(
     await this.appointmentRepository.remove(appointment);
   }
 
-  /* -------------------------- AVAILABLE SLOTS -------------------------------- */
-
+  /* ---------------- AVAILABLE SLOTS ---------------- */
   async getAvailableSlots(tenantId: string, date?: string) {
-    const targetDate = date ? new Date(date) : new Date();
-    const dateStr = targetDate.toISOString().split('T')[0];
+    const dateStr = date || new Date().toISOString().split('T')[0];
 
     const staff = await this.userRepository.find({
       where: { tenantId, status: 'active' as any },
     });
 
-    const eligibleStaff = staff.filter(
-      (u) =>
-        u.role !== UserRole.SUPER_ADMIN &&
-        u.role !== UserRole.ORGANISATION,
-    );
-
     const appointments = await this.appointmentRepository
       .createQueryBuilder('appointment')
-      .leftJoinAndSelect('appointment.lead', 'lead')
+      .leftJoin('appointment.lead', 'lead')
       .where('DATE(appointment.date) = :date', { date: dateStr })
-      .andWhere('appointment.status = :status', { status: 'scheduled' })
+      .andWhere('lead.tenantId = :tenantId', { tenantId })
       .getMany();
 
     const slots: string[] = [];
@@ -292,10 +228,7 @@ async findByLead(
       return {
         date: dateStr,
         time,
-        availableStaff: eligibleStaff.filter(
-          (s) => !bookedStaffIds.includes(s.id),
-        ),
-        totalStaff: eligibleStaff.length,
+        availableStaff: staff.filter((s) => !bookedStaffIds.includes(s.id)),
       };
     });
   }
