@@ -2,9 +2,15 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+const app = await NestFactory.create<NestExpressApplication>(AppModule);
+// Serve uploaded files statically
+app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+  prefix: '/uploads',
+});
 
   // Enable CORS - Support multiple frontend origins
   const allowedOrigins = process.env.FRONTEND_URLS
@@ -47,6 +53,10 @@ async function bootstrap() {
     type: VersioningType.URI,
     defaultVersion: '1',
   });
+
+  
+
+
 
   // Swagger configuration
   const config = new DocumentBuilder()

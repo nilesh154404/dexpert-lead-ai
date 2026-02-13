@@ -14,6 +14,10 @@ import { TenantsModule } from './tenants/tenants.module';
 import { AiConfigModule } from './ai-config/ai-config.module';
 import { DatabaseConfigService } from './database/database-config.service';
 import { PublicGuard } from './auth/guards/public.guard';
+import { FileUploadModule } from './file-upload/file-upload.module';
+import { ProductModule } from './product/product.module';
+import { ProductPromptModule } from './product-prompt/product-prompt.module';
+
 
 @Module({
   imports: [
@@ -32,6 +36,11 @@ import { PublicGuard } from './auth/guards/public.guard';
     AnalyticsModule,
     TenantsModule,
     AiConfigModule,
+  
+    FileUploadModule,
+    ProductModule,
+    ProductPromptModule,
+    // other modules,
   ],
   controllers: [AppController],
   providers: [

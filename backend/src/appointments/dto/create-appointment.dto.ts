@@ -33,10 +33,6 @@ export class CreateAppointmentDto {
   @IsOptional()
   type?: AppointmentType;
 
-  @ApiProperty({ enum: AppointmentStatus, default: AppointmentStatus.SCHEDULED, required: false })
-  @IsEnum(AppointmentStatus)
-  @IsOptional()
-  status?: AppointmentStatus;
 
   @ApiProperty({ example: 'High intent - prepare pricing', required: false })
   @IsString()

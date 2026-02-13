@@ -15,7 +15,11 @@ import Analytics from "./pages/Analytics";
 import Team from "./pages/Team";
 import Conversations from "./pages/Conversations";
 import BrandingSettings from "./pages/BrandingSettings";
+import Tenants from "./pages/Tenants";
 import NotFound from "./pages/NotFound";
+import ProductAdmin from "./pages/ProductAdmin";
+import MyProducts from "./pages/MyProducts";
+import ProductPrompt from "./pages/ProductPrompt";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +52,44 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+
+// Organisation-only Protected Route
+function OrganisationRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading, user } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ai mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Only ORGANISATION can access
+  if (user?.role !== 'organisation') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-lg font-semibold text-red-600">Access Denied</p>
+          <p className="text-gray-600 mt-2">Only organisation admins can access this page</p>
+          <a href="/" className="text-blue-600 hover:underline mt-4 inline-block">
+            Go to Dashboard
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -58,6 +100,30 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route
+                path="/admin/products"
+                element={
+                  <OrganisationRoute>
+                    <ProductAdmin />
+                  </OrganisationRoute>
+                }
+              />
+              <Route
+                path="/admin/myproducts"
+                element={
+                  <OrganisationRoute>
+                    <MyProducts />
+                  </OrganisationRoute>
+                }
+              />
+              <Route
+                path="/admin/product-prompt"
+                element={
+                  <OrganisationRoute>
+                    <ProductPrompt />
+                  </OrganisationRoute>
+                }
+              />
               <Route
                 path="/"
                 element={
@@ -123,10 +189,27 @@ const App = () => (
                 }
               />
               <Route
+  path="/admin/products"
+  element={
+    <OrganisationRoute>
+      <ProductAdmin />
+    </OrganisationRoute>
+  }
+/>
+
+              <Route
                 path="/branding"
                 element={
                   <ProtectedRoute>
                     <BrandingSettings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/tenants"
+                element={
+                  <ProtectedRoute>
+                    <Tenants />
                   </ProtectedRoute>
                 }
               />

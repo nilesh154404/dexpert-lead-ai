@@ -48,7 +48,7 @@ export const authApi = {
   },
 
   logout: () => {
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem('access_token');
     localStorage.removeItem('user');
     window.location.href = '/login';
   },

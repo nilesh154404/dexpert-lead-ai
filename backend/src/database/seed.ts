@@ -4,6 +4,7 @@ import * as crypto from 'crypto';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { User } from '../entities/user.entity';
+import { Product } from '../entities/product.entity';
 import { Tenant } from '../entities/tenant.entity';
 import { Lead } from '../entities/lead.entity';
 import { Appointment } from '../entities/appointment.entity';
@@ -38,9 +39,43 @@ async function seed() {
       AutomationRule,
       Role,
       Permission,
+      Product,
     ],
     synchronize: false,
   });
+
+  // --- Product seeding logic (commented out by request) ---
+  /*
+  const productRepository = AppDataSource.getRepository(Product);
+  // Add 3 random products for the first org admin
+  const orgAdmin = await userRepository.findOne({ where: { role: 'organisation' } });
+  if (orgAdmin) {
+    const products = [
+      {
+        organisation_id: orgAdmin.id,
+        product_name: 'Alpha Widget',
+        product_description: 'A powerful widget for all your alpha needs.'
+      },
+      {
+        organisation_id: orgAdmin.id,
+        product_name: 'Beta Gadget',
+        product_description: 'A handy gadget for beta testing.'
+      },
+      {
+        organisation_id: orgAdmin.id,
+        product_name: 'Gamma Tool',
+        product_description: 'A versatile tool for gamma operations.'
+      },
+    ];
+    for (const p of products) {
+      await productRepository.save(productRepository.create(p));
+    }
+    console.log('✓ Added 3 random products for the first organisation admin');
+  } else {
+    console.log('No organisation admin found, skipping product seed.');
+  }
+  */
+  // --- End product seeding logic ---
 
   await AppDataSource.initialize();
   console.log('Database connected');

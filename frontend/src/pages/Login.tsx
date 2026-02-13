@@ -28,7 +28,7 @@ export default function Login() {
     mutationFn: (data: { email: string; password: string }) => authApi.login(data),
     onSuccess: async (response) => {
       // Store token and user data directly from response
-      localStorage.setItem('auth_token', response.access_token);
+      localStorage.setItem('access_token', response.access_token);
       const userData: User = {
         id: response.id,
         name: response.name,

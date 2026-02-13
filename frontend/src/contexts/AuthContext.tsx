@@ -1,81 +1,78 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { authApi, User } from '@/lib/api/auth.api';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from 'react';
+import { authApi } from '@/lib/api/auth.api';
+
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  tenantId: string;
+}
 
 interface AuthContextType {
   user: User | null;
   token: string | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
   isAuthenticated: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | null>(null);
+
+const TOKEN_KEY = 'access_token';
+const USER_KEY = 'user';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // 🔁 Restore auth on app load
   useEffect(() => {
-    // Load user and token from localStorage
-    const storedToken = localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem(TOKEN_KEY);
+    const storedUser = localStorage.getItem(USER_KEY);
 
     if (storedToken && storedUser) {
       setToken(storedToken);
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        console.error('Failed to parse user from localStorage', e);
-      }
+      setUser(JSON.parse(storedUser));
     }
+
     setIsLoading(false);
   }, []);
 
   const login = async (email: string, password: string) => {
-    const response = await authApi.login({ email, password });
-    setToken(response.access_token);
-    const userData: User = {
-      id: response.id,
-      name: response.name,
-      email: response.email,
-      role: response.role as User['role'],
-      tenantId: response.tenantId,
-      status: response.status as any,
-      department: response.department,
-      createdAt: response.createdAt,
-      updatedAt: response.updatedAt,
-    };
-    setUser(userData);
-    localStorage.setItem('auth_token', response.access_token);
-    localStorage.setItem('user', JSON.stringify(userData));
-  };
+    const res = await authApi.login({ email, password });
 
-  const register = async (name: string, email: string, password: string) => {
-    const response = await authApi.register({ name, email, password });
-    setToken(response.access_token);
+    // 🔑 Store token
+    localStorage.setItem(TOKEN_KEY, res.access_token);
+
     const userData: User = {
-      id: response.id,
-      name: response.name,
-      email: response.email,
-      role: response.role as User['role'],
-      tenantId: response.tenantId,
-      status: response.status as any,
-      department: response.department,
-      createdAt: response.createdAt,
-      updatedAt: response.updatedAt,
+      id: res.id,
+      name: res.name,
+      email: res.email,
+      role: res.role,
+      tenantId: res.tenantId,
     };
+
+    localStorage.setItem(USER_KEY, JSON.stringify(userData));
+
+    // 🔄 Update state BEFORE navigation
+    setToken(res.access_token);
     setUser(userData);
-    localStorage.setItem('auth_token', response.access_token);
-    localStorage.setItem('user', JSON.stringify(userData));
   };
 
   const logout = () => {
-    authApi.logout();
-    setUser(null);
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
     setToken(null);
+    setUser(null);
   };
 
   return (
@@ -84,10 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         token,
         isLoading,
+        isAuthenticated: !!token, // 🔥 IMPORTANT
         login,
-        register,
         logout,
-        isAuthenticated: !!user && !!token,
       }}
     >
       {children}
@@ -95,10 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-}
+export const useAuth = () => {
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
+};

@@ -2,9 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
-/* DEXORA AI Platform Design System
-   Clean SaaS aesthetic with AI-first visual language
-   All colors in HSL for theming */
+/* DEXTRUS AI Platform Design System
+  Clean SaaS aesthetic with AI-first visual language
+  All colors in HSL for theming */
 
 @layer base {
   :root {

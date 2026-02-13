@@ -7,7 +7,8 @@ import {
   BarChart3,
   Bot,
   UserCog,
-  Sparkles
+  Sparkles,
+  Globe
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import {
@@ -39,9 +40,16 @@ const aiNavItems = [
 ];
 
 const adminNavItems = [
+  { title: "Tenants", url: "/tenants", icon: Globe },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Team", url: "/team", icon: UserCog },
   { title: "Branding", url: "/branding", icon: Settings },
+];
+
+const orgNavItems = [
+  { title: "Products", url: "/admin/products", icon: BarChart3 },
+  { title: "My Products", url: "/admin/myproducts", icon: BarChart3 },
+  { title: "Product Prompt", url: "/admin/product-prompt", icon: BarChart3 },
 ];
 
 export function AppSidebar() {
@@ -56,24 +64,25 @@ export function AppSidebar() {
   };
 
   // RBAC: Filter menu items based on role
-  const canAccessAdmin = user?.role === 'super_admin' || user?.role === 'organisation';
+  const isSuperAdmin = user?.role === 'super_admin';
+  const isOrganisation = user?.role === 'organisation';
+  const canAccessAdmin = isSuperAdmin || isOrganisation;
   const canAccessAIConfig = canAccessAdmin;
-  
-  // All roles can access main items, but filter admin items
+
+  // All roles can access main items, but filter admin/org items
   const visibleMainItems = mainNavItems;
   const visibleAIItems = canAccessAIConfig ? aiNavItems : [];
-  const visibleAdminItems = canAccessAdmin ? adminNavItems : [];
+  const visibleAdminItems = isSuperAdmin ? adminNavItems : [];
+  const visibleOrgItems = isOrganisation ? orgNavItems : [];
 
   return (
     <Sidebar collapsible="icon" className="border-r-0">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-            <Bot className="h-5 w-5" />
-          </div>
+          <img src="/assets/dextrus-logo.png" alt="Dextrus AI Logo" className="h-9 w-9 rounded-lg" />
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-sm font-semibold text-sidebar-foreground">DEXORA</span>
+              <span className="text-sm font-semibold text-sidebar-foreground">DEXTRUS</span>
               <span className="text-xs text-sidebar-foreground/60">AI Platform</span>
             </div>
           )}
@@ -136,6 +145,30 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 {visibleAdminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(item.url)}
+                      tooltip={item.title}
+                    >
+                      <NavLink to={item.url}>
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {visibleOrgItems.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sidebar-foreground/50">Organisation</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {visibleOrgItems.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild

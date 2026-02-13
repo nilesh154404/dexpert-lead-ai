@@ -6,6 +6,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Expose } from 'class-transformer';
 import { User } from './user.entity';
 import { Lead } from './lead.entity';
 import { Conversation } from './conversation.entity';
@@ -19,11 +20,31 @@ export class Tenant {
   @Column()
   name: string;
 
+  // ✅ REAL DATABASE FIELD
+  @Column({
+    type: 'enum',
+    enum: ['active', 'inactive'],
+    default: 'active',
+  })
+  status: 'active' | 'inactive';
+
+  // ✅ FRONTEND FIELD (SERIALIZED)
+  @Expose()
+  get isActive(): boolean {
+    return this.status === 'active';
+  }
+
   @Column({ nullable: true })
   logo: string;
 
   @Column({ nullable: true })
   logomark: string;
+
+  @Column({ nullable: true })
+  email?: string;
+
+  @Column({ nullable: true })
+  mobileNumber?: string;
 
   @Column({ name: 'primary_color', default: '222 47% 20%' })
   primaryColor: string;
