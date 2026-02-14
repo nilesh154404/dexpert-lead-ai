@@ -35,6 +35,10 @@ export class Product {
   @Column()
   product_name: string;
 
+  // ✅ Description (optional)
+  @Column({ type: 'text', nullable: true })
+  description: string | null;
+
   // Tenant / organisation ID
   @Column()
   tenant_id: string;
@@ -42,6 +46,9 @@ export class Product {
   // OrgAdmin (user) who created the product
   // @Column()
   // created_by: string;
+  // ✅ Status (Active / Inactive)
+  @Column({ type: 'boolean', default: true })
+  is_active: boolean;
 
   @CreateDateColumn()
   created_at: Date;

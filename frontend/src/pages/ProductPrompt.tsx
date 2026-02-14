@@ -407,11 +407,295 @@
 // }
 
 
+
+
+
+//  ths is working code tested okay 
+
+// import { useEffect, useState } from "react";
+// import { useAuth } from "@/contexts/AuthContext";
+// import { promptApi, Product, PromptVersion } from "@/lib/api/prompt.api";
+
+
+
+// export default function ProductPrompt() {
+//   const { user } = useAuth();
+
+//   const [products, setProducts] = useState<Product[]>([]);
+//   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+
+//   const [promptText, setPromptText] = useState("");
+//   const [versions, setVersions] = useState<PromptVersion[]>([]);
+//   const [loading, setLoading] = useState(false);
+
+//   /* ---------------- LOAD PRODUCTS ---------------- */
+//   useEffect(() => {
+//     promptApi.getProducts().then(setProducts);
+//   }, []);
+
+//   /* ---------------- LOAD PROMPT + VERSIONS ---------------- */
+//   const selectProduct = async (product: Product) => {
+//     setSelectedProduct(product);
+//     setLoading(true);
+
+//     const [latest, allVersions] = await Promise.all([
+//       promptApi.getLatest(product.id),
+//       promptApi.getVersions(product.id),
+//     ]);
+
+//     setPromptText(latest?.prompt_text || "");
+//     setVersions(allVersions);
+//     setLoading(false);
+//   };
+
+//   /* ---------------- SAVE PROMPT ---------------- */
+//   const savePrompt = async () => {
+//     if (!selectedProduct) return;
+
+//     const nextVersion = `v${versions.length + 1}`;
+
+//     await promptApi.savePrompt(
+//       selectedProduct.id,
+//       promptText,
+//       nextVersion
+//     );
+
+//     /* ---------------- DEPLOY VERSION ---------------- */
+// const deployVersion = async (promptId: number) => {
+//   if (!selectedProduct) return;
+
+//   const confirmDeploy = window.confirm(
+//     "Are you sure you want to make this version PRODUCTION?\nThis will replace the current production version."
+//   );
+
+//   if (!confirmDeploy) return;
+
+//   await promptApi.deployPrompt(selectedProduct.id, promptId);
+
+//   // Reload versions + latest
+//   const updatedVersions = await promptApi.getVersions(selectedProduct.id);
+//   const latest = await promptApi.getLatest(selectedProduct.id);
+
+//   setVersions(updatedVersions);
+//   setPromptText(latest?.prompt_text || "");
+// };
+
+
+//     // Reload versions + latest
+//     const updatedVersions = await promptApi.getVersions(selectedProduct.id);
+//     const latest = await promptApi.getLatest(selectedProduct.id);
+
+//     setVersions(updatedVersions);
+//     setPromptText(latest?.prompt_text || "");
+//   };
+
+//   if (user?.role !== "organisation") {
+//     return (
+//       <div className="min-h-[80vh] flex items-center justify-center">
+//         <p className="text-red-600 font-semibold">Access Denied</p>
+//       </div>
+//     );
+//   }
+
+// //   const deployVersion = async (promptId: number) => {
+// //   if (!selectedProduct) return;
+
+// //   const confirmDeploy = window.confirm(
+// //     "Are you sure you want to make this version production? This will replace the current production version."
+// //   );
+
+// //   if (!confirmDeploy) return;
+
+// //   try {
+// //     await promptApi.deployPrompt(selectedProduct.id, promptId);
+
+// //     // Reload versions after deploy
+// //     const updatedVersions = await promptApi.getVersions(selectedProduct.id);
+// //     setVersions(updatedVersions);
+
+// //     alert("Version deployed successfully 🚀");
+// //   } catch (err) {
+// //     console.error(err);
+// //     alert("Failed to deploy version");
+// //   }
+// // };
+
+// const deployVersion = async (promptId: number) => {
+//   if (!selectedProduct?.id) {
+//     alert("Product not selected");
+//     return;
+//   }
+
+//   const confirmDeploy = window.confirm(
+//     "Are you sure you want to make this version production?"
+//   );
+
+//   if (!confirmDeploy) return;
+
+//   try {
+//     await promptApi.deployVersion(
+//       Number(selectedProduct.id),
+//       Number(promptId)
+//     );
+
+//     // 🔥 VERY IMPORTANT: reload fresh state from backend
+//     const updatedVersions = await promptApi.getVersions(
+//       selectedProduct.id
+//     );
+
+//     setVersions(updatedVersions);
+
+//     alert("Version deployed successfully");
+//   } catch (error) {
+//     console.error("Deploy error:", error);
+//     alert("Failed to deploy version");
+//   }
+// };
+
+
+
+//   return (
+//     <div className="min-h-[80vh] p-6">
+//       <div className="grid grid-cols-12 gap-6">
+
+//         {/* ---------------- LEFT PANEL ---------------- */}
+//         <div className="col-span-3 bg-white rounded-lg border p-4">
+//           <h3 className="font-semibold mb-4">Products</h3>
+
+//           <ul className="space-y-2">
+//             {products.map((p) => (
+//               <li
+//                 key={p.id}
+//                 onClick={() => selectProduct(p)}
+//                 className={`cursor-pointer p-2 rounded ${
+//                   selectedProduct?.id === p.id
+//                     ? "bg-blue-600 text-white"
+//                     : "hover:bg-gray-100"
+//                 }`}
+//               >
+//                 {p.product_name}
+//               </li>
+//             ))}
+//           </ul>
+//         </div>
+
+//         {/* ---------------- RIGHT PANEL ---------------- */}
+//         <div className="col-span-9 bg-white rounded-lg border p-6">
+//           {!selectedProduct ? (
+//             <p className="text-gray-500">
+//               Select a product to add prompt
+//             </p>
+//           ) : loading ? (
+//             <p>Loading...</p>
+//           ) : (
+//             <>
+//               <h2 className="font-semibold mb-4">
+//                 Product: {selectedProduct.product_name}
+//               </h2>
+              
+//               <textarea
+//                 value={promptText}
+//                 onChange={(e) => setPromptText(e.target.value)}
+//                 placeholder="Enter full product prompt here..."
+//                 className="w-full h-40 border rounded p-3"
+//               />
+
+//               <div className="flex gap-3 mt-4">
+//                 <button
+//                   onClick={savePrompt}
+//                   className="px-4 py-2 bg-blue-600 text-white rounded"
+//                 >
+//                   Save
+//                 </button>
+//                 <button
+//                   className="px-4 py-2 border rounded"
+//                   onClick={() => setPromptText("")}
+//                 >
+//                   Clear
+//                 </button>
+//               </div>
+
+              
+
+//               {/* ---------------- VERSIONS ---------------- */}
+//               <div className="mt-6">
+//   <h3 className="font-semibold mb-2">Versions</h3>
+
+//   <div className="space-y-2">
+//     {versions.map((v) => (
+//       <div
+//         key={v.prompt_id}
+//         className={`flex items-center justify-between border rounded p-2 ${
+//           v.is_production ? "border-green-500 bg-green-50" : ""
+//         }`}
+//       >
+//         {/* LEFT: Version info */}
+//         <div
+//           onClick={() => setPromptText(v.prompt_text)}
+//           className="cursor-pointer"
+//         >
+//           <span className="font-medium">{v.version}</span>
+
+//           {v.is_production && (
+//             <span className="ml-3 text-green-600 font-semibold">
+//               ● PRODUCTION
+//             </span>
+//           )}
+//         </div>
+
+//         {/* RIGHT: Deploy button */}
+//         {!v.is_production && (
+//           <button
+//             onClick={() => deployVersion(v.prompt_id)}
+//             className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+//           >
+//             Production
+//           </button>
+//         )}
+//       </div>
+//     ))}
+//   </div>
+// </div>
+
+
+
+
+
+
+//             </>
+//           )}
+//         </div>
+
+//       </div>
+//     </div>
+//   );
+// }
+
+
+
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { promptApi, Product, PromptVersion } from "@/lib/api/prompt.api";
 
-
+/* ---------------- MODAL ---------------- */
+function Modal({
+  title,
+  children,
+  onClose,
+}: {
+  title: string;
+  children: React.ReactNode;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+      <div className="bg-white rounded-lg p-6 w-[420px]">
+        <h3 className="font-semibold mb-4">{title}</h3>
+        {children}
+      </div>
+    </div>
+  );
+}
 
 export default function ProductPrompt() {
   const { user } = useAuth();
@@ -423,12 +707,15 @@ export default function ProductPrompt() {
   const [versions, setVersions] = useState<PromptVersion[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const [showAddPrompt, setShowAddPrompt] = useState(false);
+  const [versionInput, setVersionInput] = useState("");
+
   /* ---------------- LOAD PRODUCTS ---------------- */
   useEffect(() => {
     promptApi.getProducts().then(setProducts);
   }, []);
 
-  /* ---------------- LOAD PROMPT + VERSIONS ---------------- */
+  /* ---------------- SELECT PRODUCT ---------------- */
   const selectProduct = async (product: Product) => {
     setSelectedProduct(product);
     setLoading(true);
@@ -443,47 +730,54 @@ export default function ProductPrompt() {
     setLoading(false);
   };
 
-  /* ---------------- SAVE PROMPT ---------------- */
-  const savePrompt = async () => {
+  /* ---------------- DEPLOY VERSION ---------------- */
+  const deployVersion = async (promptId: number) => {
     if (!selectedProduct) return;
 
-    const nextVersion = `v${versions.length + 1}`;
+    const ok = window.confirm(
+      "Are you sure you want to make this version PRODUCTION?\nThis will replace the current production prompt."
+    );
+    if (!ok) return;
+
+    await promptApi.deployVersion(selectedProduct.id, promptId);
+
+    const updated = await promptApi.getVersions(selectedProduct.id);
+    setVersions(updated);
+  };
+
+  /* ---------------- ADD PROMPT ---------------- */
+  const addPrompt = async () => {
+    if (!selectedProduct || !versionInput || !promptText) {
+      alert("All fields are required");
+      return;
+    }
 
     await promptApi.savePrompt(
       selectedProduct.id,
       promptText,
-      nextVersion
+      versionInput
     );
 
-    /* ---------------- DEPLOY VERSION ---------------- */
-const deployVersion = async (promptId: number) => {
-  if (!selectedProduct) return;
+    const updated = await promptApi.getVersions(selectedProduct.id);
+    setVersions(updated);
 
-  const confirmDeploy = window.confirm(
-    "Are you sure you want to make this version PRODUCTION?\nThis will replace the current production version."
-  );
-
-  if (!confirmDeploy) return;
-
-  await promptApi.deployPrompt(selectedProduct.id, promptId);
-
-  // Reload versions + latest
-  const updatedVersions = await promptApi.getVersions(selectedProduct.id);
-  const latest = await promptApi.getLatest(selectedProduct.id);
-
-  setVersions(updatedVersions);
-  setPromptText(latest?.prompt_text || "");
-};
-
-
-    // Reload versions + latest
-    const updatedVersions = await promptApi.getVersions(selectedProduct.id);
-    const latest = await promptApi.getLatest(selectedProduct.id);
-
-    setVersions(updatedVersions);
-    setPromptText(latest?.prompt_text || "");
+    setVersionInput("");
+    setPromptText("");
+    setShowAddPrompt(false);
   };
 
+  /* ---------------- COPY PROMPT ---------------- */
+  const copyPrompt = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      alert("Prompt copied to clipboard");
+    } catch (err) {
+      console.error(err);
+      alert("Failed to copy prompt");
+    }
+  };
+
+  /* ---------------- ACCESS CONTROL ---------------- */
   if (user?.role !== "organisation") {
     return (
       <div className="min-h-[80vh] flex items-center justify-center">
@@ -492,67 +786,9 @@ const deployVersion = async (promptId: number) => {
     );
   }
 
-//   const deployVersion = async (promptId: number) => {
-//   if (!selectedProduct) return;
-
-//   const confirmDeploy = window.confirm(
-//     "Are you sure you want to make this version production? This will replace the current production version."
-//   );
-
-//   if (!confirmDeploy) return;
-
-//   try {
-//     await promptApi.deployPrompt(selectedProduct.id, promptId);
-
-//     // Reload versions after deploy
-//     const updatedVersions = await promptApi.getVersions(selectedProduct.id);
-//     setVersions(updatedVersions);
-
-//     alert("Version deployed successfully 🚀");
-//   } catch (err) {
-//     console.error(err);
-//     alert("Failed to deploy version");
-//   }
-// };
-
-const deployVersion = async (promptId: number) => {
-  if (!selectedProduct?.id) {
-    alert("Product not selected");
-    return;
-  }
-
-  const confirmDeploy = window.confirm(
-    "Are you sure you want to make this version production?"
-  );
-
-  if (!confirmDeploy) return;
-
-  try {
-    await promptApi.deployVersion(
-      Number(selectedProduct.id),
-      Number(promptId)
-    );
-
-    // 🔥 VERY IMPORTANT: reload fresh state from backend
-    const updatedVersions = await promptApi.getVersions(
-      selectedProduct.id
-    );
-
-    setVersions(updatedVersions);
-
-    alert("Version deployed successfully");
-  } catch (error) {
-    console.error("Deploy error:", error);
-    alert("Failed to deploy version");
-  }
-};
-
-
-
   return (
     <div className="min-h-[80vh] p-6">
       <div className="grid grid-cols-12 gap-6">
-
         {/* ---------------- LEFT PANEL ---------------- */}
         <div className="col-span-3 bg-white rounded-lg border p-4">
           <h3 className="font-semibold mb-4">Products</h3>
@@ -578,83 +814,173 @@ const deployVersion = async (promptId: number) => {
         <div className="col-span-9 bg-white rounded-lg border p-6">
           {!selectedProduct ? (
             <p className="text-gray-500">
-              Select a product to add prompt
+              Select a product to manage prompts
             </p>
           ) : loading ? (
             <p>Loading...</p>
           ) : (
             <>
-              <h2 className="font-semibold mb-4">
-                Product: {selectedProduct.product_name}
-              </h2>
-              
-              <textarea
-                value={promptText}
-                onChange={(e) => setPromptText(e.target.value)}
-                placeholder="Enter full product prompt here..."
-                className="w-full h-40 border rounded p-3"
-              />
+              {/* HEADER */}
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="font-semibold">
+                  Prompts – {selectedProduct.product_name}
+                </h2>
 
-              <div className="flex gap-3 mt-4">
                 <button
-                  onClick={savePrompt}
-                  className="px-4 py-2 bg-blue-600 text-white rounded"
+                  onClick={() => setShowAddPrompt(true)}
+                  className="px-3 py-2 bg-black text-white rounded text-sm"
                 >
-                  Save
-                </button>
-                <button
-                  className="px-4 py-2 border rounded"
-                  onClick={() => setPromptText("")}
-                >
-                  Clear
+                  + Add Prompt
                 </button>
               </div>
 
-              {/* ---------------- VERSIONS ---------------- */}
-              <div className="mt-6">
-  <h3 className="font-semibold mb-2">Versions</h3>
+              {/* PROMPTS TABLE */}
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="p-3 text-left">Version</th>
+                      <th className="p-3 text-left">Prompt</th>
+                      <th className="p-3 text-left">Production</th>
+                      <th className="p-3 text-right">Actions</th>
+                    </tr>
+                  </thead>
 
-  <div className="space-y-2">
-    {versions.map((v) => (
-      <div
-        key={v.prompt_id}
-        className={`flex items-center justify-between border rounded p-2 ${
-          v.is_production ? "border-green-500 bg-green-50" : ""
-        }`}
-      >
-        {/* LEFT: Version info */}
-        <div
-          onClick={() => setPromptText(v.prompt_text)}
-          className="cursor-pointer"
-        >
-          <span className="font-medium">{v.version}</span>
+                  <tbody>
+                    {versions.map((v) => (
+                      <tr
+                        key={v.prompt_id}
+                        className={`border-t ${
+                          v.is_production ? "bg-green-50" : ""
+                        }`}
+                      >
+                        <td className="p-3 font-medium">
+                          {v.version}
+                        </td>
 
-          {v.is_production && (
-            <span className="ml-3 text-green-600 font-semibold">
-              ● PRODUCTION
-            </span>
-          )}
-        </div>
+                        <td
+                          className="p-3 text-gray-600 truncate max-w-md cursor-pointer"
+                          onClick={() =>
+                            setPromptText(v.prompt_text)
+                          }
+                        >
+                          {v.prompt_text}
+                        </td>
 
-        {/* RIGHT: Deploy button */}
-        {!v.is_production && (
-          <button
-            onClick={() => deployVersion(v.prompt_id)}
-            className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
-          >
-            Production
-          </button>
-        )}
-      </div>
-    ))}
-  </div>
-</div>
+                        <td className="p-3">
+                          {v.is_production ? (
+                            <span className="px-3 py-1 text-xs rounded bg-green-100 text-green-700">
+                              Live
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                deployVersion(v.prompt_id)
+                              }
+                              className="px-3 py-1 text-xs rounded bg-gray-200 hover:bg-gray-300"
+                            >
+                              Off
+                            </button>
+                          )}
+                        </td>
 
+                        <td className="p-3 text-right flex justify-end gap-3">
+                          {/* COPY */}
+                          <button
+                            onClick={() =>
+                              copyPrompt(v.prompt_text)
+                            }
+                            title="Copy prompt"
+                            className="px-2 py-1 text-xs border rounded hover:bg-gray-100"
+                          >
+                            📋
+                          </button>
+
+                          {/* DELETE (placeholder) */}
+                          <button
+                            title="Delete prompt"
+                            className="text-red-600"
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <p className="text-xs text-gray-500 mt-2">
+                Only one prompt can be set as production at a time.
+              </p>
             </>
           )}
         </div>
-
       </div>
+
+      {/* ---------------- ADD PROMPT MODAL ---------------- */}
+      {showAddPrompt && selectedProduct && (
+        <Modal
+          title="Add Prompt"
+          onClose={() => setShowAddPrompt(false)}
+        >
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">
+              Product
+            </label>
+            <input
+              value={selectedProduct.product_name}
+              disabled
+              className="w-full border rounded px-3 py-2 bg-gray-100"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-1">
+              Version
+            </label>
+            <input
+              value={versionInput}
+              onChange={(e) =>
+                setVersionInput(e.target.value)
+              }
+              placeholder="v2.0"
+              className="w-full border rounded px-3 py-2"
+            />
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium mb-1">
+              Prompt Text
+            </label>
+            <textarea
+              value={promptText}
+              onChange={(e) =>
+                setPromptText(e.target.value)
+              }
+              rows={4}
+              placeholder="Enter your prompt..."
+              className="w-full border rounded px-3 py-2 resize-none"
+            />
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <button
+              onClick={() => setShowAddPrompt(false)}
+              className="px-4 py-2 border rounded"
+            >
+              Cancel
+            </button>
+
+            <button
+              onClick={addPrompt}
+              className="px-4 py-2 bg-black text-white rounded"
+            >
+              Add
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
