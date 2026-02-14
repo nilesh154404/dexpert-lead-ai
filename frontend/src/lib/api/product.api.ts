@@ -25,18 +25,50 @@
 // };
 
 
-import { apiClient } from '@/lib/api/api-client';
+// import { apiClient } from '@/lib/api/api-client';
 
-export interface Product {
+// export interface Product {
+//   id: number;
+//   product_name: string;
+//   created_at: string;
+// }
+
+// export const productApi = {
+//   createProduct: (product_name: string) =>
+//     apiClient.post('/product/create', { product_name }),
+
+//   getMyProducts: () =>
+//     apiClient.get<Product[]>('/product/my-products'),
+// };
+
+import { apiClient } from "./api-client";
+
+export type Product = {
   id: number;
   product_name: string;
   created_at: string;
-}
+};
 
 export const productApi = {
-  createProduct: (product_name: string) =>
-    apiClient.post('/product/create', { product_name }),
+  getMyProducts: async (): Promise<Product[]> => {
+    const res = await apiClient.get("/product/my-products");
+    return res.data;
+  },
 
-  getMyProducts: () =>
-    apiClient.get<Product[]>('/product/my-products'),
+  createProduct: async (product_name: string) => {
+    const res = await apiClient.post("/product/create", { product_name });
+    return res.data;
+  },
+
+  updateProduct: async (id: number, product_name: string) => {
+    const res = await apiClient.patch(`/product/${id}`, {
+      product_name,
+    });
+    return res.data;
+  },
+
+  deleteProduct: async (id: number) => {
+    const res = await apiClient.delete(`/product/${id}`);
+    return res.data;
+  },
 };

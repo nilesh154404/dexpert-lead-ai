@@ -12,6 +12,7 @@ import { AutomationRule } from '../entities/automation-rule.entity';
 import { Role } from '../entities/role.entity';
 import { Permission } from '../entities/permission.entity';
 import { Product } from '../entities/product.entity';
+import { Prompt } from '../product-prompt/product-prompt.entity';
 
 @Injectable()
 export class DatabaseConfigService implements TypeOrmOptionsFactory {
@@ -37,6 +38,7 @@ export class DatabaseConfigService implements TypeOrmOptionsFactory {
         Role,
         Permission,
         Product,
+        Prompt,
       ],
       synchronize: this.configService.get<string>('NODE_ENV') !== 'production',
       logging: this.configService.get<string>('NODE_ENV') === 'development',

@@ -138,9 +138,121 @@
 // export default ProductAdminPage;
 
 
+// import { useEffect, useState } from 'react';
+// import { productApi, Product } from '@/lib/api/product.api';
+// import { AppLayout } from '@/components/layout/AppLayout';
+// import {
+//   Dialog,
+//   DialogTrigger,
+//   DialogContent,
+//   DialogHeader,
+//   DialogFooter,
+// } from '@/components/ui/dialog';
+
+// export default function ProductAdminPage() {
+//   const [products, setProducts] = useState<Product[]>([]);
+//   const [productName, setProductName] = useState('');
+//   const [open, setOpen] = useState(false);
+//   const [loading, setLoading] = useState(false);
+//   const [error, setError] = useState('');
+
+//   // ✅ Load products
+//   const loadProducts = async () => {
+//     try {
+//       setLoading(true);
+//       const data = await productApi.getMyProducts();
+//       setProducts(data.data);
+//     } catch {
+//       setError('Failed to load products');
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   useEffect(() => {
+//     loadProducts();
+//   }, []);
+
+//   // ✅ Create product
+//   const handleCreate = async (e: React.FormEvent) => {
+//     e.preventDefault();
+//     setError('');
+
+//     try {
+//       await productApi.createProduct(productName);
+//       setProductName('');
+//       setOpen(false);
+//       loadProducts();
+//     } catch {
+//       setError('Failed to create product');
+//     }
+//   };
+
+//   return (
+//     <AppLayout title="Products">
+//       <div className="p-6 max-w-3xl mx-auto">
+//         <Dialog open={open} onOpenChange={setOpen}>
+//           <DialogTrigger asChild>
+//             <button className="bg-blue-600 text-white px-4 py-2 rounded">
+//               Add Product
+//             </button>
+//           </DialogTrigger>
+
+//           <DialogContent>
+//             <DialogHeader>
+//               <label className="font-medium">Enter Product Name</label>
+//             </DialogHeader>
+
+//             <form onSubmit={handleCreate}>
+//               <input
+//                 value={productName}
+//                 onChange={(e) => setProductName(e.target.value)}
+//                 className="border px-3 py-2 w-full"
+//                 placeholder="Product name"
+//                 required
+//               />
+
+//               <DialogFooter className="mt-4">
+//                 <button
+//                   type="submit"
+//                   className="bg-blue-600 text-white px-4 py-2 rounded"
+//                 >
+//                   Save
+//                 </button>
+//               </DialogFooter>
+//             </form>
+
+//             {error && <p className="text-red-600 mt-2">{error}</p>}
+//           </DialogContent>
+//         </Dialog>
+
+//         {/* PRODUCT LIST */}
+//         <div className="mt-6">
+//           {loading ? (
+//             <p>Loading...</p>
+//           ) : (
+//             <ul className="space-y-2">
+//               {products.map((p) => (
+//                 <li
+//                   key={p.id}
+//                   className="border p-3 rounded flex justify-between"
+//                 >
+//                   <span>{p.product_name}</span>
+//                   <span className="text-sm text-gray-500">
+//                     {new Date(p.created_at).toLocaleDateString()}
+//                   </span>
+//                 </li>
+//               ))}
+//             </ul>
+//           )}
+//         </div>
+//       </div>
+//     </AppLayout>
+//   );
+// }
+
 import { useEffect, useState } from 'react';
 import { productApi, Product } from '@/lib/api/product.api';
-import { AppLayout } from '@/components/layout/AppLayout';
 import {
   Dialog,
   DialogTrigger,
@@ -156,7 +268,7 @@ export default function ProductAdminPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // ✅ Load products
+  // Load products
   const loadProducts = async () => {
     try {
       setLoading(true);
@@ -173,7 +285,7 @@ export default function ProductAdminPage() {
     loadProducts();
   }, []);
 
-  // ✅ Create product
+  // Create product
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -189,64 +301,62 @@ export default function ProductAdminPage() {
   };
 
   return (
-    <AppLayout title="Products">
-      <div className="p-6 max-w-3xl mx-auto">
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded">
-              Add Product
-            </button>
-          </DialogTrigger>
+    <div className="p-6 max-w-3xl mx-auto">
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          <button className="bg-blue-600 text-white px-4 py-2 rounded">
+            Add Product
+          </button>
+        </DialogTrigger>
 
-          <DialogContent>
-            <DialogHeader>
-              <h3 className="text-lg font-semibold">Enter Product Name</h3>
-            </DialogHeader>
+        <DialogContent>
+          <DialogHeader>
+            <label className="font-medium">Enter Product Name</label>
+          </DialogHeader>
 
-            <form onSubmit={handleCreate}>
-              <input
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                className="border px-3 py-2 w-full"
-                placeholder="Product name"
-                required
-              />
+          <form onSubmit={handleCreate}>
+            <input
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+              className="border px-3 py-2 w-full"
+              placeholder="Product name"
+              required
+            />
 
-              <DialogFooter className="mt-4">
-                <button
-                  type="submit"
-                  className="bg-blue-600 text-white px-4 py-2 rounded"
-                >
-                  Save
-                </button>
-              </DialogFooter>
-            </form>
+            <DialogFooter className="mt-4">
+              <button
+                type="submit"
+                className="bg-blue-600 text-white px-4 py-2 rounded"
+              >
+                Save
+              </button>
+            </DialogFooter>
+          </form>
 
-            {error && <p className="text-red-600 mt-2">{error}</p>}
-          </DialogContent>
-        </Dialog>
+          {error && <p className="text-red-600 mt-2">{error}</p>}
+        </DialogContent>
+      </Dialog>
 
-        {/* PRODUCT LIST */}
-        <div className="mt-6">
-          {loading ? (
-            <p>Loading...</p>
-          ) : (
-            <ul className="space-y-2">
-              {products.map((p) => (
-                <li
-                  key={p.id}
-                  className="border p-3 rounded flex justify-between"
-                >
-                  <span>{p.product_name}</span>
-                  <span className="text-sm text-gray-500">
-                    {new Date(p.created_at).toLocaleDateString()}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      {/* PRODUCT LIST */}
+      <div className="mt-6">
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <ul className="space-y-2">
+            {products.map((p) => (
+              <li
+                key={p.id}
+                className="border p-3 rounded flex justify-between"
+              >
+                <span>{p.product_name}</span>
+                <span className="text-sm text-gray-500">
+                  {new Date(p.created_at).toLocaleDateString()}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
-    </AppLayout>
+    </div>
   );
 }

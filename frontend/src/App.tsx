@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { TenantProvider } from "@/contexts/TenantContext";
+
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Leads from "./pages/Leads";
@@ -17,9 +18,14 @@ import Conversations from "./pages/Conversations";
 import BrandingSettings from "./pages/BrandingSettings";
 import Tenants from "./pages/Tenants";
 import NotFound from "./pages/NotFound";
+
 import ProductAdmin from "./pages/ProductAdmin";
 import MyProducts from "./pages/MyProducts";
 import ProductPrompt from "./pages/ProductPrompt";
+
+import { AppLayout } from "@/components/layout/AppLayout";
+
+/* ---------------- QUERY CLIENT ---------------- */
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -30,17 +36,15 @@ const queryClient = new QueryClient({
   },
 });
 
-// Protected Route Component
+/* ---------------- PROTECTED ROUTE ---------------- */
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ai mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
+        Loading...
       </div>
     );
   }
@@ -52,18 +56,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/* ---------------- ORG ADMIN ROUTE ---------------- */
 
-// Organisation-only Protected Route
 function OrganisationRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-ai mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
+        Loading...
       </div>
     );
   }
@@ -72,14 +73,12 @@ function OrganisationRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Only ORGANISATION can access
-  if (user?.role !== 'organisation') {
+  if (user?.role !== "organisation") {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <p className="text-lg font-semibold text-red-600">Access Denied</p>
-          <p className="text-gray-600 mt-2">Only organisation admins can access this page</p>
-          <a href="/" className="text-blue-600 hover:underline mt-4 inline-block">
+          <a href="/" className="text-blue-600 underline">
             Go to Dashboard
           </a>
         </div>
@@ -90,6 +89,8 @@ function OrganisationRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/* ---------------- APP ---------------- */
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -99,31 +100,10 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* ---------- AUTH ---------- */}
               <Route path="/login" element={<Login />} />
-              <Route
-                path="/admin/products"
-                element={
-                  <OrganisationRoute>
-                    <ProductAdmin />
-                  </OrganisationRoute>
-                }
-              />
-              <Route
-                path="/admin/myproducts"
-                element={
-                  <OrganisationRoute>
-                    <MyProducts />
-                  </OrganisationRoute>
-                }
-              />
-              <Route
-                path="/admin/product-prompt"
-                element={
-                  <OrganisationRoute>
-                    <ProductPrompt />
-                  </OrganisationRoute>
-                }
-              />
+
+              {/* ---------- DASHBOARD ---------- */}
               <Route
                 path="/"
                 element={
@@ -132,6 +112,8 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+
+              {/* ---------- NORMAL USER ROUTES ---------- */}
               <Route
                 path="/leads"
                 element={
@@ -189,15 +171,6 @@ const App = () => (
                 }
               />
               <Route
-  path="/admin/products"
-  element={
-    <OrganisationRoute>
-      <ProductAdmin />
-    </OrganisationRoute>
-  }
-/>
-
-              <Route
                 path="/branding"
                 element={
                   <ProtectedRoute>
@@ -213,7 +186,42 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+
+              {/* ---------- ORG ADMIN ROUTES (FIXED) ---------- */}
+              <Route
+                path="/admin/products"
+                element={
+                  <OrganisationRoute>
+                    <AppLayout title="Products">
+                      <ProductAdmin />
+                    </AppLayout>
+                  </OrganisationRoute>
+                }
+              />
+
+              <Route
+                path="/admin/myproducts"
+                element={
+                  <OrganisationRoute>
+                    <AppLayout title="My Products">
+                      <MyProducts />
+                    </AppLayout>
+                  </OrganisationRoute>
+                }
+              />
+
+              <Route
+                path="/admin/product-prompt"
+                element={
+                  <OrganisationRoute>
+                    <AppLayout title="Product Prompt">
+                      <ProductPrompt />
+                    </AppLayout>
+                  </OrganisationRoute>
+                }
+              />
+
+              {/* ---------- FALLBACK ---------- */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

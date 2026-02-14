@@ -8,6 +8,8 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+        historyApiFallback: true, // ✅ THIS IS THE FIX
+
     hmr: {
       overlay: false,
     },

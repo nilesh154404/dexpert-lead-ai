@@ -1,28 +1,173 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+// import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, Index } from 'typeorm';
+// import { Product } from '../entities/product.entity';
 
-@Entity('product_prompt')
-export class ProductPrompt {
-  @PrimaryGeneratedColumn({ name: 'prompt_id' })
-  promptId: number;
+// @Entity('prompt')
+// export class Prompt {
+//   @PrimaryGeneratedColumn()
+//   prompt_id: number;
 
-  @Column({ name: 'tenant_id', type: 'varchar', nullable: false })
-  tenantId: string;
+//   @Column()
+//   @Index()
+//   product_id: number;
 
-  @Column({ name: 'product_id', type: 'int', nullable: false })
-  productId: number;
+//   @Column()
+//   tenant_id: string;
 
-  @Column({ name: 'text', type: 'longtext', nullable: false })
-  text: string;
+//   @Column('longtext')
+//   prompt_text: string;
 
-  @Column({ name: 'version', type: 'varchar', nullable: false })
+//   @Column()
+//   version: string;
+
+//   @CreateDateColumn({ type: 'timestamp' })
+//   created_at: Date;
+
+//   @Column()
+//   created_by: string;
+
+//   @ManyToOne(() => Product)
+//   product: Product;
+// }
+
+// import {
+//   Entity,
+//   PrimaryGeneratedColumn,
+//   Column,
+//   ManyToOne,
+//   CreateDateColumn,
+//   Index,
+//   JoinColumn,
+// } from 'typeorm';
+// import { Product } from '../entities/product.entity';
+
+// @Entity('prompt')
+// export class Prompt {
+//   @PrimaryGeneratedColumn()
+//   prompt_id: number;
+
+//   @Column()
+//   @Index()
+//   product_id: number;
+
+//   @Column()
+//   tenant_id: string;
+
+//   @Column('longtext')
+//   prompt_text: string;
+
+//   @Column({ length: 32 })
+//   version: string;
+
+//   @CreateDateColumn({ type: 'timestamp' })
+//   created_at: Date;
+
+//   @Column()
+//   created_by: string;
+
+//   @ManyToOne(() => Product)
+//   @JoinColumn({ name: 'product_id' })
+//   product: Product;
+// }
+
+
+// import {
+//   Entity,
+//   PrimaryGeneratedColumn,
+//   Column,
+//   CreateDateColumn,
+//   ManyToOne,
+//   JoinColumn,
+// } from 'typeorm';
+// import { Product } from '../entities/product.entity';
+
+// @Entity('prompt')
+// export class Prompt {
+//   @PrimaryGeneratedColumn()
+//   prompt_id: number;
+
+//   @Column()
+//   product_id: number;
+
+//   @Column()
+//   tenant_id: string;
+
+//   @Column('longtext')
+//   prompt_text: string;
+
+//   @Column({ length: 32 })
+//   version: string;
+
+//   @CreateDateColumn({ type: 'timestamp' })
+//   created_at: Date;
+
+//   @Column()
+//   created_by: string;
+
+//   @ManyToOne(() => Product)
+//   @JoinColumn({ name: 'product_id' })
+//   product: Product;
+// }
+
+
+// import {
+//   Entity,
+//   PrimaryGeneratedColumn,
+//   Column,
+//   CreateDateColumn,
+//   Index,
+// } from 'typeorm';
+
+// @Entity('prompt')
+// export class Prompt {
+//   @PrimaryGeneratedColumn()
+//   prompt_id: number;
+
+//   @Index()
+//   @Column()
+//   product_id: number;
+
+//   @Column()
+//   tenant_id: string;
+
+//   @Column('longtext')
+//   prompt_text: string;
+
+//   @Column({ length: 32 })
+//   version: string;
+
+//   @CreateDateColumn()
+//   created_at: Date;
+
+//   @Column()
+//   created_by: string;
+// }
+
+
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+
+@Entity('prompt')
+export class Prompt {
+  @PrimaryGeneratedColumn()
+  prompt_id: number;
+
+  @Column()
+  product_id: number;
+
+  @Column()
+  tenant_id: string;
+
+  @Column('longtext')
+  prompt_text: string;
+
+  @Column()
   version: string;
 
-  @Column({ name: 'is_active', type: 'boolean', default: false })
-  isActive: boolean;
+  @Column()
+  created_by: string;
 
-  @Column({ name: 'created_by', type: 'varchar', nullable: false })
-  createdBy: string;
+  @Column({ default: false })
+  is_production: boolean;
 
-  @CreateDateColumn({ name: 'created_at', type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
-  createdAt: Date;
+  @Column({ type: 'datetime', default: () => 'CURRENT_TIMESTAMP' })
+  created_at: Date;
 }
