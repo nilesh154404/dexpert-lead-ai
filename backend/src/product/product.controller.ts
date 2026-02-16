@@ -367,13 +367,14 @@ import { UserRole } from '../entities/user.entity';
 import { ProductService } from './product.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { CompanyGuard } from '@/auth/guards/company.guard';
 
 @ApiTags('Product')
 @ApiBearerAuth('JWT-auth')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('product')
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(private readonly productService: ProductService) { }
 
   /* ================= CREATE ================= */
   @Post('create')
