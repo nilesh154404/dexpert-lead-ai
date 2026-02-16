@@ -1236,12 +1236,12 @@ export default function ProductPrompt() {
                             📋
                           </button>
 
-                          <button
+                          {/* <button
                             className="text-red-600"
                             title="Delete prompt"
                           >
                             🗑️
-                          </button>
+                          </button> */}
                         </td>
                       </tr>
                     ))}

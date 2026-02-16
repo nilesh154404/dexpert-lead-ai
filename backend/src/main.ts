@@ -17,25 +17,36 @@ app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     ? process.env.FRONTEND_URLS.split(',')
     : ['http://localhost:8080', 'http://localhost:5173', 'https://lead-ai.dexpertsystems.com', 'https://lead-ai-backend.dexpertsystems.com'];
 
+  // app.enableCors({
+  //   origin: "*",
+  //   // (origin, callback) => {
+  //   //   // Allow requests with no origin (like mobile apps or curl requests)
+  //   //   if (!origin) return callback(null, true);
+
+  //   //   // Allow Swagger UI
+  //   //   if (origin.includes('localhost:3000')) return callback(null, true);
+
+  //   //   if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+  //   //     callback(null, true);
+  //   //   } else {
+  //   //     callback(new Error('Not allowed by CORS'));
+  //   //   }
+  //   // },
+  //   credentials: true,
+  //   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  //   allowedHeaders: ['Content-Type', 'Authorization'],
+  // });
+
   app.enableCors({
-    origin: "*",
-    // (origin, callback) => {
-    //   // Allow requests with no origin (like mobile apps or curl requests)
-    //   if (!origin) return callback(null, true);
+  origin: [
+    'http://localhost:8080',
+    'http://localhost:5173',
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+});
 
-    //   // Allow Swagger UI
-    //   if (origin.includes('localhost:3000')) return callback(null, true);
-
-    //   if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
-    //     callback(null, true);
-    //   } else {
-    //     callback(new Error('Not allowed by CORS'));
-    //   }
-    // },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -92,7 +103,7 @@ app.useStaticAssets(join(__dirname, '..', 'uploads'), {
     },
   });
 
-  const port = process.env.PORT || 3005;
+  const port = process.env.PORT || 3000;
   await app.listen(port);
   console.log(`Application is running on: http://localhost:${port}`);
   console.log(`Swagger documentation: http://localhost:${port}/api/docs`);
