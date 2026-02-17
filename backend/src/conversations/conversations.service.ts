@@ -267,10 +267,13 @@ import { Repository } from 'typeorm';
 import { Conversation } from '../entities/conversation.entity';
 import { Message } from '../entities/message.entity';
 import { Lead } from '../entities/lead.entity';
-
+import { ChatAuthDto } from './dto/chat-auth.dto';
+import { MessageRole } from '../entities/message.entity';
 import { CreateConversationDto } from './dto/create-conversation.dto';
 import { UpdateConversationDto } from './dto/update-conversation.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
+import { UserRole } from '../entities/user.entity';
+import { User } from '../entities/user.entity';
 
 import { ConversationsGateway } from './conversations.gateway';
 
@@ -323,20 +326,47 @@ export class ConversationsService {
   }
 
   /* ================= LIST CONVERSATIONS ================= */
-  async findAll(tenantId: string, leadId?: string) {
-    const query = this.conversationRepository
-      .createQueryBuilder('conversation')
-      .leftJoinAndSelect('conversation.lead', 'lead')
-      .where('conversation.tenantId = :tenantId', { tenantId });
+  // async findAll(tenantId: string, leadId?: string) {
+  //   const query = this.conversationRepository
+  //     .createQueryBuilder('conversation')
+  //     .leftJoinAndSelect('conversation.lead', 'lead')
+  //     .where('conversation.tenantId = :tenantId', { tenantId });
 
-    if (leadId) {
-      query.andWhere('lead.id = :leadId', { leadId });
-    }
+  //   if (leadId) {
+  //     query.andWhere('lead.id = :leadId', { leadId });
+  //   }
 
-    query.orderBy('conversation.updatedAt', 'DESC');
+  //   query.orderBy('conversation.updatedAt', 'DESC');
 
-    return query.getMany();
+  //   return query.getMany();
+  // }
+
+async findAll(
+  user: User,
+  leadId?: string,
+) {
+  const query = this.conversationRepository
+    .createQueryBuilder('conversation')
+    .leftJoinAndSelect('conversation.lead', 'lead');
+
+  // ✅ ADMIN → tenant restriction
+  if (user.role !== UserRole.SUPER_ADMIN) {
+    query.where('conversation.tenantId = :tenantId', {
+      tenantId: user.tenantId,
+    });
   }
+
+  // optional lead filter
+  if (leadId) {
+    query.andWhere('conversation.leadId = :leadId', { leadId });
+  }
+
+  query.orderBy('conversation.updatedAt', 'DESC');
+
+  return query.getMany();
+}
+
+
 
   /* ================= SINGLE CONVERSATION ================= */
   async findOne(id: string, tenantId: string): Promise<Conversation> {
@@ -353,17 +383,49 @@ export class ConversationsService {
   }
 
   /* ================= GET MESSAGES ================= */
-  async getMessages(
-    conversationId: string,
-    tenantId: string,
-  ): Promise<Message[]> {
-    await this.findOne(conversationId, tenantId);
+  // async getMessages(
+  //   conversationId: string,
+  //   tenantId: string,
+  // ): Promise<Message[]> {
+  //   await this.findOne(conversationId, tenantId);
 
+  //   return this.messageRepository.find({
+  //     where: { conversationId },
+  //     order: { createdAt: 'ASC' },
+  //   });
+  // }
+
+  async getMessages(
+  conversationId: string,
+  user: User,
+): Promise<Message[]> {
+
+  if (user.role === UserRole.SUPER_ADMIN) {
+    // 🔓 Super admin can read messages from ANY tenant
     return this.messageRepository.find({
       where: { conversationId },
       order: { createdAt: 'ASC' },
     });
   }
+
+  // 🔒 Normal admin → tenant check
+  const conversation = await this.conversationRepository.findOne({
+    where: {
+      id: conversationId,
+      tenantId: user.tenantId,
+    },
+  });
+
+  if (!conversation) {
+    throw new NotFoundException('Conversation not found');
+  }
+
+  return this.messageRepository.find({
+    where: { conversationId },
+    order: { createdAt: 'ASC' },
+  });
+}
+
 
   /* ================= ADD MESSAGE (CHATBOT ONLY) ================= */
   // async addMessage(
@@ -444,4 +506,71 @@ export class ConversationsService {
     const conversation = await this.findOne(id, tenantId);
     await this.conversationRepository.remove(conversation);
   }
+
+
+//   async addChatbotMessage(dto: ChatAuthDto): Promise<Message> {
+//   const conversation = await this.conversationRepository.findOne({
+//     where: {
+//       id: dto.conversation_id,
+//       tenantId: dto.tenant_id,
+//     },
+//   });
+
+//   if (!conversation) {
+//     throw new NotFoundException('Conversation not found for tenant');
+//   }
+
+//   const message = this.messageRepository.create({
+//     conversationId: dto.conversation_id,
+//     role: 'ai',
+//     content: dto.content,
+//   });
+
+//   const saved = await this.messageRepository.save(message);
+
+//   // 🔥 SOCKET EVENT
+//   this.gateway.emitMessageCreated(saved);
+
+//   return saved;
+// }
+
+async addChatbotMessage(dto: ChatAuthDto): Promise<Message> {
+  const conversation = await this.conversationRepository.findOne({
+    where: {
+      id: dto.conversationId,
+      tenantId: dto.tenantId,
+    },
+  });
+
+  if (!conversation) {
+    throw new NotFoundException('Conversation not found');
+  }
+
+  const message = this.messageRepository.create({
+    conversationId: dto.conversationId,
+    role: dto.role, // MessageRole.AI
+    content: dto.content,
+    aiInsightType: dto.aiInsightType,
+    aiInsightLabel: dto.aiInsightLabel,
+    aiInsightConfidence: dto.aiInsightConfidence,
+  });
+
+  const saved = await this.messageRepository.save(message);
+
+  // update lead activity
+  const lead = await this.leadRepository.findOne({
+    where: { id: conversation.leadId },
+  });
+
+  if (lead) {
+    lead.lastInteractionAt = new Date();
+    await this.leadRepository.save(lead);
+  }
+
+  // 🔥 REAL-TIME UPDATE
+  this.gateway.emitMessageCreated(saved);
+
+  return saved;
+}
+
 }

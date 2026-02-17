@@ -115,7 +115,9 @@ import { CreateMessageDto } from './dto/create-message.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { User } from '../entities/user.entity';
-// import {ChatAuthDto} from '../conversations/dto/chat-auth.dto'
+import { ChatAuthDto } from './dto/chat-auth.dto';
+
+
 
 @ApiTags('conversations')
 @ApiBearerAuth('JWT-auth')
@@ -140,7 +142,9 @@ export class ConversationsController {
     @Query('leadId') leadId: string,
     @CurrentUser() user: User,
   ) {
-    return this.service.findAll(user.tenantId, leadId);
+    // return this.service.findAll(user.tenantId, leadId);
+      return this.service.findAll(user, leadId);
+
   }
 
   @Get(':id')
@@ -151,13 +155,22 @@ export class ConversationsController {
     return this.service.findOne(id, user.tenantId);
   }
 
+  // @Get(':id/messages')
+  // getMessages(
+  //   @Param('id') id: string,
+  //   @CurrentUser() user: User,
+  // ) {
+  //   return this.service.getMessages(id, user.tenantId);
+  // }
+
   @Get(':id/messages')
-  getMessages(
-    @Param('id') id: string,
-    @CurrentUser() user: User,
-  ) {
-    return this.service.getMessages(id, user.tenantId);
-  }
+getMessages(
+  @Param('id') id: string,
+  @CurrentUser() user: User,
+) {
+  return this.service.getMessages(id, user);
+}
+
 
   @Post('messages')
   addMessage(
@@ -183,6 +196,13 @@ export class ConversationsController {
   ) {
     return this.service.remove(id, user.tenantId);
   }
+
+  @Post('chat-auth')
+@ApiOperation({ summary: 'Chatbot → Add AI message (no user auth)' })
+@ApiResponse({ status: 201 })
+async chatAuth(@Body() dto: ChatAuthDto) {
+  return this.service.addChatbotMessage(dto);
+}
 
  
 
