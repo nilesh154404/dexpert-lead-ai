@@ -5,8 +5,10 @@ import {
   OneToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  BeforeInsert,
 } from 'typeorm';
 import { Expose } from 'class-transformer';
+import * as crypto from 'crypto';
 import { User } from './user.entity';
 import { Lead } from './lead.entity';
 import { Conversation } from './conversation.entity';
@@ -66,6 +68,13 @@ export class Tenant {
 
   @Column({ name: 'tenant_secret', nullable: true, select: false })
   tenantSecret: string;
+
+  @BeforeInsert()
+  generateSecret() {
+    if (!this.tenantSecret) {
+      this.tenantSecret = crypto.randomBytes(32).toString('hex');
+    }
+  }
 
   @OneToMany(() => User, (user) => user.tenant)
   users: User[];
