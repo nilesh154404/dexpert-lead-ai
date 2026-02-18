@@ -49,6 +49,7 @@ const adminNavItems = [
 const orgNavItems = [
   { title: "Products", url: "/admin/products", icon: BarChart3 },
   { title: "My Products", url: "/admin/myproducts", icon: BarChart3 },
+  { title: "Team", url: "/team", icon: UserCog }, // Added Team after My Products
   { title: "Product Prompt", url: "/admin/product-prompt", icon: BarChart3 },
 ];
 

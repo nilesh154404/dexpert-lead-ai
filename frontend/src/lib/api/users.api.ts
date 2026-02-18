@@ -32,9 +32,45 @@ export const usersApi = {
     return apiClient.get<User>(`/users/${id}`);
   },
 
-  create: async (data: CreateUserDto): Promise<User> => {
-    return apiClient.post<User>('/users', data);
-  },
+  // create: async (data: CreateUserDto): Promise<User> => {
+  //   return apiClient.post<User>('/users', data);
+  // },
+
+//   create: async (data: Omit<CreateUserDto, "password">): Promise<User> => {
+//   return apiClient.post<User>('/users', {
+//     ...data,
+
+//     // ✅ REQUIRED BY BACKEND
+//     password: 'password123',
+
+//     // ✅ SAFE DEFAULTS
+//     status: data.status ?? 'active',
+
+//     // ✅ MATCH BACKEND ENUM
+//     role: data.role?.toUpperCase(),
+//   });
+// },
+
+create: async (data: {
+  name: string;
+  email: string;
+  role: string;
+  department?: string;
+}): Promise<User> => {
+  return apiClient.post<User>('/users', {
+    name: data.name,
+    email: data.email,
+    // ✅ DEFAULT STAFF PASSWORD
+    password: 'password123',
+    // ✅ MATCH BACKEND ENUM VALUE (lowercase)
+    role: data.role.toLowerCase(),
+    department: data.department,
+    // ✅ SAFE DEFAULT
+    status: 'active',
+  });
+},
+
+
 
   update: async (id: string, data: Partial<CreateUserDto>): Promise<User> => {
     return apiClient.patch<User>(`/users/${id}`, data);

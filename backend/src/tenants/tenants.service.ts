@@ -1,8 +1,9 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Tenant } from '../entities/tenant.entity';
-import { User } from '../entities/user.entity';
+import { User, UserRole, UserStatus } from '../entities/user.entity';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantDto } from './dto/update-tenant.dto';
 
@@ -15,7 +16,7 @@ export class TenantsService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async create(createTenantDto: CreateTenantDto): Promise<Tenant> {
+  async create(createTenantDto: CreateTenantDto): Promise<{ tenant: Tenant; admin: { email: string; password: string } }> {
     const existingTenant = await this.tenantRepository.findOne({
       where: { name: createTenantDto.name },
     });
@@ -26,8 +27,35 @@ export class TenantsService {
       );
     }
 
+    // Create tenant
     const tenant = this.tenantRepository.create(createTenantDto);
-    return this.tenantRepository.save(tenant);
+    const savedTenant = await this.tenantRepository.save(tenant);
+
+    // Auto-create admin user for this tenant
+    const adminEmail = createTenantDto.email
+      ? createTenantDto.email
+      : `admin@${createTenantDto.name.replace(/\s+/g, '').toLowerCase()}.com`;
+    const adminPassword = 'admin123';
+    const hashedPassword = await bcrypt.hash(adminPassword, 10);
+
+    const adminUser = this.userRepository.create({
+      name: 'Admin',
+      email: adminEmail,
+      password: hashedPassword,
+      role: UserRole.ORGANISATION,
+      status: UserStatus.ACTIVE,
+      tenantId: savedTenant.id,
+      department: 'Management',
+    });
+    await this.userRepository.save(adminUser);
+
+    return {
+      tenant: savedTenant,
+      admin: {
+        email: adminEmail,
+        password: adminPassword,
+      },
+    };
   }
 
   async findAll(page = 1, limit = 10) {

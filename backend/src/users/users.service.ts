@@ -2,7 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User } from '../entities/user.entity';
+import { User, UserRole } from '../entities/user.entity';
+import { Role } from '../entities/role.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 
@@ -11,15 +12,34 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
   ) {}
 
   async create(createUserDto: CreateUserDto, tenantId: string): Promise<User> {
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
 
+    // Auto-assign roleId based on role
+    let roleId: string | undefined = undefined;
+    if (createUserDto.role === UserRole.ORGANISATION || createUserDto.role === UserRole.ADMIN) {
+      // Find OrgAdmin role
+      const orgAdminRole = await this.roleRepository.findOne({ where: { name: 'OrgAdmin' } });
+      if (orgAdminRole) roleId = orgAdminRole.id;
+    } else if (
+      createUserDto.role === UserRole.MANAGER ||
+      createUserDto.role === UserRole.SALES ||
+      createUserDto.role === UserRole.SUPPORT
+    ) {
+      // Find Staff role
+      const staffRole = await this.roleRepository.findOne({ where: { name: 'Staff' } });
+      if (staffRole) roleId = staffRole.id;
+    }
+
     const user = this.userRepository.create({
       ...createUserDto,
       password: hashedPassword,
       tenantId,
+      roleId,
     });
 
     const savedUser = await this.userRepository.save(user);

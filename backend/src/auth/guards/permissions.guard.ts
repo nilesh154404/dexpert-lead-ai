@@ -30,9 +30,16 @@ export class PermissionsGuard implements CanActivate {
   }
 
   // ✅ IMPORTANT FIX: Super Admin bypasses ALL permission checks
-  if (user.role === 'super_admin') {
-    return true;
-  }
+  // if (user.role === 'super_admin') {
+  //   return true;
+  // }
+
+  if (
+  user.role === 'super_admin' ||
+  user.role === 'organisation'
+) {
+  return true;
+}
 
   // System tokens (exchange endpoint)
   if (user.type === 'system') {

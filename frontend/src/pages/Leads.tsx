@@ -3,6 +3,8 @@ import { Search, Filter, SortAsc, Grid, List, Sparkles } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { LeadCard } from "@/components/leads/LeadCard";
@@ -17,11 +19,16 @@ import { useNavigate } from "react-router-dom";
 import { leadsApi, Lead, LeadQueryParams } from "@/lib/api/leads.api";
 import { formatDistanceToNow } from "date-fns";
 
+
 export default function Leads() {
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [intentFilter, setIntentFilter] = useState<string>("all");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createLoading, setCreateLoading] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [leadForm, setLeadForm] = useState({ name: "", email: "", company: "", phone: "", aiSummary: "Interested in enterprise plan" });
   const navigate = useNavigate();
 
   const queryParams: LeadQueryParams = {
@@ -75,7 +82,6 @@ export default function Leads() {
               <SelectItem value="converted">Converted</SelectItem>
             </SelectContent>
           </Select>
-          
           <Select value={intentFilter} onValueChange={setIntentFilter}>
             <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Intent" />
@@ -87,7 +93,9 @@ export default function Leads() {
               <SelectItem value="cool">Cool (50-69%)</SelectItem>
             </SelectContent>
           </Select>
-
+          <Button variant="ai" onClick={() => setCreateOpen(true)}>
+            + Create Lead
+          </Button>
           <div className="flex items-center border rounded-lg p-1">
             <Button
               variant={viewMode === "grid" ? "secondary" : "ghost"}
@@ -106,6 +114,83 @@ export default function Leads() {
           </div>
         </div>
       </div>
+
+      {/* Create Lead Dialog */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Create New Lead</DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setCreateLoading(true);
+              setCreateError(null);
+              try {
+                await leadsApi.create(leadForm);
+                setCreateOpen(false);
+                setLeadForm({ name: "", email: "", company: "", phone: "", aiSummary: "Interested in enterprise plan" });
+                refetch();
+              } catch (err: any) {
+                setCreateError(err?.message || "Failed to create lead");
+              } finally {
+                setCreateLoading(false);
+              }
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <Label>Name</Label>
+              <Input
+                required
+                value={leadForm.name}
+                onChange={e => setLeadForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="Lead Name"
+              />
+            </div>
+            <div>
+              <Label>Email</Label>
+              <Input
+                required
+                type="email"
+                value={leadForm.email}
+                onChange={e => setLeadForm(f => ({ ...f, email: e.target.value }))}
+                placeholder="Lead Email"
+              />
+            </div>
+            <div>
+              <Label>Company</Label>
+              <Input
+                value={leadForm.company}
+                onChange={e => setLeadForm(f => ({ ...f, company: e.target.value }))}
+                placeholder="Company Name"
+              />
+            </div>
+            <div>
+              <Label>Phone</Label>
+              <Input
+                value={leadForm.phone}
+                onChange={e => setLeadForm(f => ({ ...f, phone: e.target.value }))}
+                placeholder="Phone Number"
+              />
+            </div>
+            <div>
+              <Label>Message</Label>
+              <Input
+                value={leadForm.aiSummary}
+                onChange={e => setLeadForm(f => ({ ...f, aiSummary: e.target.value }))}
+                placeholder="Message for this lead"
+              />
+            </div>
+            {createError && <div className="text-destructive text-sm">{createError}</div>}
+            <DialogFooter>
+              <Button type="submit" loading={createLoading} disabled={createLoading}>
+                Create Lead
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* AI Summary Bar */}
       {leads.length > 0 && (
