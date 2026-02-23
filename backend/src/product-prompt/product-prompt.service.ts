@@ -241,6 +241,10 @@
 // }  thsi is done boss
 //-------------------------
 
+
+
+
+
 import {
   Injectable,
   ForbiddenException,
@@ -252,6 +256,7 @@ import { Repository } from 'typeorm';
 import { Prompt } from './product-prompt.entity';
 import { Product } from '../entities/product.entity';
 import { CreatePromptDto } from './dto/create-prompt.dto';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
 export class PromptService {
@@ -261,6 +266,8 @@ export class PromptService {
 
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
+
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   // ================= PRODUCTS =================
@@ -300,7 +307,14 @@ export class PromptService {
     tenantId: string,
     createdBy: string,
     dto: CreatePromptDto,
+    adminId: string,
   ) {
+    // Check plan limit
+    const canCreate = await this.subscriptionService.canCreatePrompt(adminId);
+    if (!canCreate) {
+      throw new ForbiddenException('Prompt creation limit reached for your plan.');
+    }
+
     await this.ensureProductBelongsToTenant(productId, tenantId);
 
     const prompt = this.promptRepo.create({
@@ -312,7 +326,9 @@ export class PromptService {
       is_production: false, // ✅ new versions never production by default
     });
 
-    return this.promptRepo.save(prompt);
+    const savedPrompt = await this.promptRepo.save(prompt);
+    await this.subscriptionService.incrementPromptCreate(adminId);
+    return savedPrompt;
   }
 
   // // ================= 🔥 DEPLOY TO PRODUCTION =================

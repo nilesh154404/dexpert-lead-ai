@@ -383,9 +383,16 @@ export class ProductController {
     @Body() dto: CreateProductDto,
     @Req() req: any,
   ) {
+    // Debug log to ensure correct adminId and tenantId
+    console.log('[ProductController] createProduct called with:', {
+      adminId: req.user.sub,
+      tenantId: req.user.tenantId,
+      user: req.user,
+    });
     return this.productService.createProduct(
       dto,
       req.user.tenantId,
+      req.user.sub,
     );
   }
 
@@ -410,6 +417,7 @@ export class ProductController {
       id,
       req.user.tenantId,
       dto,
+      req.user.sub,
     );
   }
 

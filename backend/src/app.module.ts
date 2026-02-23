@@ -16,7 +16,9 @@ import { DatabaseConfigService } from './database/database-config.service';
 import { PublicGuard } from './auth/guards/public.guard';
 import { FileUploadModule } from './file-upload/file-upload.module';
 import { ProductModule } from './product/product.module';
+
 import { ProductPromptModule } from './product-prompt/product-prompt.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 
 @Module({
@@ -40,6 +42,7 @@ import { ProductPromptModule } from './product-prompt/product-prompt.module';
     FileUploadModule,
     ProductModule,
     ProductPromptModule,
+    SubscriptionModule,
     // other modules,
   ],
   controllers: [AppController],

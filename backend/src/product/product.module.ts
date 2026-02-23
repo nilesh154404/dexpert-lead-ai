@@ -35,9 +35,10 @@ import { Prompt } from '../product-prompt/product-prompt.entity';
 
 import { ProductController } from './product.controller';
 import { ProductService } from './product.service';
+import { SubscriptionModule } from '../subscription/subscription.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Product, Prompt])],
+  imports: [TypeOrmModule.forFeature([Product, Prompt]), SubscriptionModule],
   controllers: [ProductController],
   providers: [ProductService],
 })

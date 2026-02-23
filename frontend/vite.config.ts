@@ -8,8 +8,14 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
-        historyApiFallback: true, // ✅ THIS IS THE FIX
-
+    historyApiFallback: true, // ✅ THIS IS THE FIX
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3000/api/v1',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+      },
+    },
     hmr: {
       overlay: false,
     },

@@ -6,6 +6,7 @@ import { AIInsightCard } from "@/components/dashboard/AIInsightCard";
 import { HotLeadsWidget } from "@/components/dashboard/HotLeadsWidget";
 import { AppointmentsWidget } from "@/components/dashboard/AppointmentsWidget";
 import { LeadFunnelWidget } from "@/components/dashboard/LeadFunnelWidget";
+import PlanSelection from "@/components/dashboard/PlanSelection";
 import { analyticsApi } from "@/lib/api/analytics.api";
 import { leadsApi } from "@/lib/api/leads.api";
 import { useAuth } from "@/contexts/AuthContext";
@@ -106,6 +107,8 @@ export default function Dashboard() {
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2 space-y-6">
           <HotLeadsWidget />
+          {/* Plan Selection UI for Admins */}
+          <PlanSelection />
         </div>
         <div className="space-y-6">
           <AppointmentsWidget />

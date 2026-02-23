@@ -562,6 +562,7 @@ deployPrompt(
       req.user.tenantId,
       req.user.email || 'organisation',
       dto,
+      req.user.sub,
     );
   }
 }

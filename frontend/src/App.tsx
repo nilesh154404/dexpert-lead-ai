@@ -7,6 +7,15 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { TenantProvider } from "@/contexts/TenantContext";
 
 import Dashboard from "./pages/Dashboard";
+import SubscriptionPage from "./pages/SubscriptionPage";
+              <Route
+                path="/subscription"
+                element={
+                  <ProtectedRoute>
+                    <SubscriptionPage />
+                  </ProtectedRoute>
+                }
+              />
 import Login from "./pages/Login";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
@@ -218,6 +227,16 @@ const App = () => (
                       <ProductPrompt />
                     </AppLayout>
                   </OrganisationRoute>
+                }
+              />
+
+              {/* ---------- SUBSCRIPTION ROUTE ---------- */}
+              <Route
+                path="/subscription"
+                element={
+                  <ProtectedRoute>
+                    <SubscriptionPage />
+                  </ProtectedRoute>
                 }
               />
 

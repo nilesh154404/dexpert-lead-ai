@@ -229,6 +229,7 @@ import { Product } from '../entities/product.entity';
 import { Prompt } from '../product-prompt/product-prompt.entity';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
+import { SubscriptionService } from '../subscription/subscription.service';
 
 @Injectable()
 export class ProductService {
@@ -238,13 +239,22 @@ export class ProductService {
 
     @InjectRepository(Prompt)
     private readonly promptRepo: Repository<Prompt>,
+
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   /* ================= CREATE ================= */
   async createProduct(
     dto: CreateProductDto,
     tenantId: string,
+    adminId: string,
   ) {
+    // Check plan limit
+    const canCreate = await this.subscriptionService.canCreateProduct(adminId);
+    if (!canCreate) {
+      throw new ForbiddenException('You must subscribe to a plan before you can create products.');
+    }
+
     const product = this.productRepo.create({
       product_name: dto.product_name,
       description: dto.description ?? null,
@@ -252,7 +262,9 @@ export class ProductService {
       is_active: true,
     });
 
-    return this.productRepo.save(product);
+    const savedProduct = await this.productRepo.save(product);
+    await this.subscriptionService.incrementProductCreate(adminId);
+    return savedProduct;
   }
 
   /* ================= GET ================= */
@@ -290,32 +302,47 @@ export class ProductService {
   // }
 
   async updateProduct(
-  productId: number,
-  tenantId: string,
-  dto: UpdateProductDto,
-) {
-  const product = await this.productRepo.findOne({
-    where: { id: productId, tenant_id: tenantId },
-  });
+    productId: number,
+    tenantId: string,
+    dto: UpdateProductDto,
+    adminId: string,
+  ) {
+    // Check plan edit limit
+    const subscription = await this.subscriptionService.getAdminSubscription(adminId);
+    if (!subscription) {
+      throw new ForbiddenException('No active subscription found.');
+    }
+    const usage = await this.subscriptionService.getUsageForSubscription(subscription.id);
+    const limit = subscription.plan.productEditLimit;
+    if (limit !== -1 && usage.productEdited >= limit) {
+      throw new ForbiddenException('Product edit limit reached for your plan. Upgrade your plan to edit more products.');
+    }
 
-  if (!product) {
-    throw new NotFoundException('Product not found');
+    const product = await this.productRepo.findOne({
+      where: { id: productId, tenant_id: tenantId },
+    });
+
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+
+    if (dto.product_name !== undefined) {
+      product.product_name = dto.product_name;
+    }
+
+    if (dto.description !== undefined) {
+      product.description = dto.description;
+    }
+
+    if (dto.is_active !== undefined) {
+      product.is_active = dto.is_active; // 🔥 FIX
+    }
+
+    const savedProduct = await this.productRepo.save(product);
+    usage.productEdited += 1;
+    await this.subscriptionService.saveUsage(usage);
+    return savedProduct;
   }
-
-  if (dto.product_name !== undefined) {
-    product.product_name = dto.product_name;
-  }
-
-  if (dto.description !== undefined) {
-    product.description = dto.description;
-  }
-
-  if (dto.is_active !== undefined) {
-    product.is_active = dto.is_active; // 🔥 FIX
-  }
-
-  return this.productRepo.save(product);
-}
 
 
   /* ================= STATUS TOGGLE ================= */
