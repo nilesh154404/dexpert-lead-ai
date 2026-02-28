@@ -37,6 +37,12 @@ export const tenantsApi = {
   update: async (data: UpdateTenantDto): Promise<TenantBranding> => {
     return apiClient.patch<TenantBranding>('/tenants/me', data);
   },
+
+  getAllTenants: async () => {
+    const response = await apiClient.get('/tenants');
+    return response.data;
+  },
+  
 };
 
 

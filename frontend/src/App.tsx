@@ -197,7 +197,7 @@ const App = () => (
               />
 
               {/* ---------- ORG ADMIN ROUTES (FIXED) ---------- */}
-              <Route
+              {/* <Route
                 path="/admin/products"
                 element={
                   <OrganisationRoute>
@@ -206,7 +206,7 @@ const App = () => (
                     </AppLayout>
                   </OrganisationRoute>
                 }
-              />
+              /> */}
 
               <Route
                 path="/admin/myproducts"

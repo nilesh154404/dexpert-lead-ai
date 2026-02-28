@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Clock, User, Video, Phone, Sparkles, ChevronLeft, ChevronRight, Plus, Pencil, Trash2 } from "lucide-react";
+import { Calendar, Clock, User, Video, Phone, Sparkles, ChevronLeft, ChevronRight, Plus, Pencil, Trash2, MessageSquare } from "lucide-react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -414,7 +414,7 @@ export default function Appointments() {
                                         <button
                                           onClick={(e) => { e.stopPropagation(); handleDeleteClick(apt.id); }}
                                           className="text-muted-foreground hover:text-destructive"
-                                          title="Delete"
+                                          title="Reschedule"
                                         >
                                           <Trash2 className="h-3 w-3" />
                                         </button>
@@ -462,9 +462,48 @@ export default function Appointments() {
       <Dialog open={isBookingOpen} onOpenChange={setIsBookingOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Book Appointment</DialogTitle>
-            <DialogDescription>
-              {selectedSlot ? `Schedule for ${new Date(selectedSlot.date).toLocaleDateString()} at ${formatTime(selectedSlot.time)}` : "Select a date and time from the calendar above"}
+            <DialogTitle>
+              {editingAppointmentId ? "Reschedule Appointment" : "Book Appointment"}
+            </DialogTitle>
+            <DialogDescription asChild>
+              <div className="pt-2">
+                {editingAppointmentId && selectedSlot ? (
+                  <div className="bg-secondary/20 rounded-lg p-3 border border-border mb-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-foreground text-sm">
+                        {bookingForm.title || "Appointment Purpose"}
+                      </span>
+                      {bookingForm.leadId && (
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-xs text-ai hover:text-blue-700"
+                          onClick={() => window.location.href = `/leads/${bookingForm.leadId}`}
+                        >
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          View Conversation
+                        </Button>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2">
+                      <span className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+                        <Calendar className="h-4 w-4 text-ai" />
+                        {new Date(selectedSlot.date).toLocaleDateString()}
+                      </span>
+                      <span className="flex items-center gap-1.5 text-sm font-bold text-foreground">
+                        <Clock className="h-4 w-4 text-ai" />
+                        {formatTime(selectedSlot.time)}
+                      </span>
+                    </div>
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    {selectedSlot
+                      ? `Schedule for ${new Date(selectedSlot.date).toLocaleDateString()} at ${formatTime(selectedSlot.time)}`
+                      : "Select a date and time from the calendar above"}
+                  </span>
+                )}
+              </div>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-3 max-h-96 overflow-y-auto">
@@ -583,7 +622,7 @@ export default function Appointments() {
               Cancel
             </Button>
             <Button onClick={handleBookingSubmit}>
-              Book Appointment
+              {editingAppointmentId ? "Confirm Reschedule" : "Book Appointment"}
             </Button>
           </DialogFooter>
         </DialogContent>

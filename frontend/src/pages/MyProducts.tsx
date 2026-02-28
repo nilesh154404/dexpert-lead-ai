@@ -455,10 +455,9 @@
 // }
 
 
-
 import { useEffect, useState } from "react";
 import { productApi, Product } from "@/lib/api/product.api";
-import { Pencil, Trash2, Plus } from "lucide-react";
+import { Pencil, Plus, Package, CalendarDays } from "lucide-react";
 
 export default function MyProducts() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -495,368 +494,209 @@ export default function MyProducts() {
     loadProducts();
   };
 
-  const confirmStatusChange = (next: boolean) => {
-  return window.confirm(
-    next
-      ? "Are you sure you want to activate this product?"
-      : "Are you sure you want to deactivate this product?"
-  );
-};
-
-
   /* ---------- UPDATE ---------- */
-//   const handleUpdate = async () => {
-//     if (!editing) return;
+  const handleUpdate = async () => {
+    if (!editing) return;
 
-//     await productApi.updateProduct(editing.id, {
-//       product_name: newName,
-//       description: newDesc,
-//     });
-
-//     setEditing(null);
-//       setNewName("");
-// setNewDesc("");
-//     loadProducts();
-//   };
-
-// const handleUpdate = async () => {
-//   if (!editing) return;
-
-//   await productApi.updateProduct(editing.id, {
-//     product_name: editing.product_name,
-//     description: editing.description,
-//   });
-
-//   setEditing(null);
-//   loadProducts();
-// };
-
-const handleUpdate = async () => {
-  if (!editing) return;
-
-  await productApi.updateProduct(editing.id, {
-    product_name: editing.product_name,
-    description: editing.description,
-    is_active: editing.is_active,
-  });
-//   await productApi.updateProduct(p.id, {
-//   product_name: p.product_name,
-//   description: p.description ?? null,
-//   is_active: next,
-// });
-
-
-  setEditing(null);
-  loadProducts();
-};
-
-
-
-
-  /* ---------- STATUS TOGGLE ---------- */
-  const toggleStatus = async (p: Product) => {
-    await productApi.updateProduct(p.id, {
-      is_active: !p.is_active,
+    await productApi.updateProduct(editing.id, {
+      product_name: editing.product_name,
+      description: editing.description,
+      is_active: editing.is_active,
     });
+
+    setEditing(null);
     loadProducts();
   };
-
-  /* ---------- DELETE ---------- */
-  const handleDelete = async (id: number) => {
-    const ok = window.confirm(
-      "Delete this product?\nAll prompts will also be deleted."
-    );
-    if (!ok) return;
-
-    await productApi.deleteProduct(id);
-    loadProducts();
-  };
-
-  if (loading) return <p className="p-6">Loading...</p>;
 
   return (
-    <div className="p-6">
-      {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-semibold">Products</h1>
+    <div className="p-6 max-w-6xl mx-auto">
+      {/* HEADER SECTION */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Products Overview</h1>
+          <p className="text-sm text-gray-500 mt-1">
+            Manage and view all products within your organization.
+          </p>
+        </div>
 
         <button
           onClick={() => setShowAdd(true)}
-          className="flex items-center gap-2 bg-black text-white px-4 py-2 rounded"
+          className="flex items-center gap-2 bg-black text-white px-4 py-2.5 rounded-md hover:bg-gray-800 transition-colors shadow-sm font-medium"
         >
-          <Plus size={16} /> Add Product
+          <Plus size={18} /> Add Product
         </button>
       </div>
 
-      {/* TABLE */}
-      <div className="bg-white border rounded-lg overflow-hidden">
-        <table className="w-full">
-          <thead className="bg-gray-50 text-left text-sm">
-            <tr>
-              <th className="p-3">Name</th>
-              <th className="p-3">Description</th>
-              <th className="p-3">Status</th>
-              <th className="p-3 text-right">Actions</th>
-            </tr>
-          </thead>
+      {/* PRODUCT CARDS GRID */}
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-40 bg-gray-100 animate-pulse rounded-xl border border-gray-200" />
+          ))}
+        </div>
+      ) : products.length === 0 ? (
+        <div className="text-center py-16 px-6 border-2 border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+          <Package className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+          <h3 className="text-lg font-semibold text-gray-900">No products found</h3>
+          <p className="text-gray-500 mt-2 max-w-sm mx-auto">
+            You haven't added any products yet. Click the "Add Product" button above to get started.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {products.map((p) => (
+            <div
+              key={p.id}
+              className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col h-full group"
+            >
+              {/* Card Header */}
+              <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0 group-hover:bg-gray-100 transition-colors">
+                    <Package className="h-5 w-5 text-gray-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 line-clamp-1" title={p.product_name}>
+                      {p.product_name}
+                    </h3>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      <span>{new Date(p.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+                </div>
 
-          <tbody>
-            {products.map((p) => (
-              <tr key={p.id} className="border-t">
-                <td className="p-3 font-medium">{p.product_name}</td>
-
-                <td className="p-3 text-gray-500">
-                  {p.description || "—"}
-                </td>
-
-                <td className="p-3">
-                  <button
-            
+                {/* Status Toggle */}
+                <button
                   onClick={async () => {
-      const next = !p.is_active;
+                    const next = !p.is_active;
+                    if (
+                      !window.confirm(
+                        next
+                          ? "Are you sure you want to ACTIVATE this product?"
+                          : "Are you sure you want to DEACTIVATE this product?"
+                      )
+                    )
+                      return;
 
-      // const ok = window.confirm(
-      //   next
-      //     ? "Are you sure you want to ACTIVATE this product?"
-      //     : "Are you sure you want to DEACTIVATE this product?"
-      // );
-      // if (!ok) return;
+                    try {
+                      await productApi.updateProduct(p.id, {
+                        product_name: p.product_name,
+                        description: p.description ?? null,
+                        is_active: next,
+                      });
+                      await loadProducts();
+                    } catch (err) {
+                      alert("Failed to update product status");
+                      console.error(err);
+                    }
+                  }}
+                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ml-2 ${
+                    p.is_active ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                  title={p.is_active ? "Active" : "Inactive"}
+                >
+                  <span
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
+                      p.is_active ? "translate-x-5" : "translate-x-0"
+                    }`}
+                  />
+                </button>
+              </div>
 
-       if (
-        !window.confirm(
-          next
-            ? "Are you sure you want to ACTIVATE this product?"
-            : "Are you sure you want to DEACTIVATE this product?"
-        )
-      ) return;
+              {/* Card Body */}
+              <div className="flex-grow mb-5">
+                <p className="text-sm text-gray-600 line-clamp-2">
+                  {p.description || <span className="text-gray-400 italic">No description provided.</span>}
+                </p>
+              </div>
 
-      try {
-        await productApi.updateProduct(p.id, {
-          product_name : p.product_name,
-          description: p.description ?? null,
-          is_active: next,
-        });
-        await loadProducts();
-      } catch (err) {
-        alert("Failed to update product status");
-        console.error(err);
-      }
-    }}
-    className={`relative w-12 h-6 rounded-full transition ${
-      p.is_active ? "bg-green-500" : "bg-gray-300"
-    }`}
-  >
-    <span
-      className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full transition-transform ${
-        p.is_active ? "translate-x-6" : ""
-      }`}
-    />
-                  </button>
-                </td>
-
-                <td className="p-3 flex justify-end gap-3">
-                  <button
-                    onClick={() => setEditing({ ...p })}
-                    className="text-blue-600"
-                  >
-                    <Pencil size={18} />
-                  </button>
-
-                  {/* <button
-                    onClick={() => handleDelete(p.id)}
-                    className="text-red-600"
-                  >
-                    <Trash2 size={18} />
-                  </button> */}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+              {/* Card Footer (Actions) */}
+              <div className="flex justify-end pt-4 border-t border-gray-100 mt-auto">
+                <button
+                  onClick={() => setEditing({ ...p })}
+                  className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors"
+                >
+                  <Pencil size={15} /> Edit
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* ---------- ADD MODAL ---------- */}
-     {/* {showAdd && (
-        <Modal  title="Add Product" onClose={() => setShowAdd(false)}>
-          <input
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Product name"
-            className="input"
-          />
+      {showAdd && (
+        <Modal title="Create New Product" onClose={() => setShowAdd(false)}>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
+            <input
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              placeholder="e.g. Lead Generation AI"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
 
-          <textarea
-            value={newDesc}
-            onChange={(e) => setNewDesc(e.target.value)}
-            placeholder="Product description (optional)"
-            className="input mt-3"
-          />
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+            <textarea
+              value={newDesc}
+              onChange={(e) => setNewDesc(e.target.value)}
+              placeholder="Product description (optional)"
+              rows={3}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
 
-          <ModalActions
-            onCancel={() => setShowAdd(false)}
-            onConfirm={handleAdd}
-          />
+          <ModalActions onCancel={() => setShowAdd(false)} onConfirm={handleAdd} />
         </Modal>
-      )} */}
-      {/* //-------------------------------------  final coorect code ui updated */}
-
-{/* ---------- ADD MODAL ---------- */}
-{showAdd && (
-  <Modal title="Add Product" onClose={() => setShowAdd(false)}>
-    {/* NAME */}
-    <div className="mb-4">
-      <label className="block text-sm font-medium mb-1">
-        Name
-      </label>
-      <input
-        value={newName}
-        onChange={(e) => setNewName(e.target.value)}
-        placeholder="Product name"
-        className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-black"
-      />
-    </div>
-
-    {/* DESCRIPTION */}
-    <div className="mb-6">
-      <label className="block text-sm font-medium mb-1">
-        Description
-      </label>
-      <textarea
-        value={newDesc}
-        onChange={(e) => setNewDesc(e.target.value)}
-        placeholder="Product description (optional)"
-        rows={3}
-        className="w-full border rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-black"
-      />
-    </div>
-
-    {/* ACTIONS */}
-    <ModalActions
-      onCancel={() => setShowAdd(false)}
-      onConfirm={handleAdd}
-    />
-  </Modal>
-)}
-
-
-
-
-      {/* this is end of add ui  */}
+      )}
 
       {/* ---------- EDIT MODAL ---------- */}
-      {/* {editing && (
+      {editing && (
         <Modal title="Edit Product" onClose={() => setEditing(null)}>
-          <input
-            value={editing.product_name}
-            onChange={(e) =>
-              setEditing({ ...editing, product_name: e.target.value })
-            }
-            className="input"
-          />
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Name</label>
+            <input
+              value={editing.product_name}
+              onChange={(e) => setEditing({ ...editing, product_name: e.target.value })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
 
-          <textarea
-            value={editing.description || ""}
-            onChange={(e) =>
-              setEditing({ ...editing, description: e.target.value })
-            }
-            className="input mt-3"
-          />
-          <div className="flex items-center justify-between mt-4">
-  <span className="text-sm font-medium">Status</span>
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
+            <textarea
+              value={editing.description || ""}
+              onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+              rows={3}
+              placeholder="Product description"
+              className="w-full border border-gray-300 rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
 
-  <button
-    type="button"
-    onClick={() =>
-      setEditing({
-        ...editing,
-        is_active: !editing.is_active,
-      })
-    }
-    className={`px-4 py-1 rounded-full text-sm ${
-      editing.is_active
-        ? "bg-green-100 text-green-700"
-        : "bg-gray-200 text-gray-600"
-    }`}
-  >
-    {editing.is_active ? "Active" : "Inactive"}
-  </button>
-</div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+            <button
+              type="button"
+              onClick={() =>
+                setEditing({
+                  ...editing,
+                  is_active: !editing.is_active,
+                })
+              }
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                editing.is_active ? "bg-green-100 text-green-700" : "bg-gray-200 text-gray-700"
+              }`}
+            >
+              {editing.is_active ? "Active" : "Inactive"}
+            </button>
+          </div>
 
-
-          
-
-          <ModalActions
-            onCancel={() => setEditing(null)}
-            onConfirm={handleUpdate}
-          />
+          <ModalActions onCancel={() => setEditing(null)} onConfirm={handleUpdate} />
         </Modal>
-      )} */}
-
-      {/* ---------- EDIT MODAL ---------- */}
-{editing && (
-  <Modal title="Edit Product" onClose={() => setEditing(null)}>
-    {/* NAME */}
-    <div className="mb-4">
-      <label className="block text-sm font-medium mb-1">
-        Name
-      </label>
-      <input
-        value={editing.product_name}
-        onChange={(e) =>
-          setEditing({ ...editing, product_name: e.target.value })
-        }
-        className="w-full border rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-black"
-      />
-    </div>
-
-    {/* DESCRIPTION */}
-    <div className="mb-4">
-      <label className="block text-sm font-medium mb-1">
-        Description
-      </label>
-      <textarea
-        value={editing.description || ""}
-        onChange={(e) =>
-          setEditing({ ...editing, description: e.target.value })
-        }
-        rows={3}
-        placeholder="Product description"
-        className="w-full border rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-1 focus:ring-black"
-      />
-    </div>
-
-    {/* STATUS */}
-    <div className="mb-6">
-      <label className="block text-sm font-medium mb-2">
-        Status
-      </label>
-
-      <button
-        type="button"
-        onClick={() =>
-          setEditing({
-            ...editing,
-            is_active: !editing.is_active,
-          })
-        }
-        className={`px-4 py-1 rounded-full text-sm font-medium ${
-          editing.is_active
-            ? "bg-green-100 text-green-700"
-            : "bg-gray-200 text-gray-600"
-        }`}
-      >
-        {editing.is_active ? "Active" : "Inactive"}
-      </button>
-    </div>
-
-    {/* ACTIONS */}
-    <ModalActions
-      onCancel={() => setEditing(null)}
-      onConfirm={handleUpdate}
-    />
-  </Modal>
-)}
-
+      )}
     </div>
   );
 }
@@ -873,30 +713,27 @@ function Modal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-96">
-        <h3 className="font-semibold mb-4">{title}</h3>
+    <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-lg p-6 w-full max-w-md mx-4">
+        <h3 className="text-xl font-semibold mb-5 text-gray-900">{title}</h3>
         {children}
       </div>
     </div>
   );
 }
 
-function ModalActions({
-  onCancel,
-  onConfirm,
-}: {
-  onCancel: () => void;
-  onConfirm: () => void;
-}) {
+function ModalActions({ onCancel, onConfirm }: { onCancel: () => void; onConfirm: () => void }) {
   return (
-    <div className="flex justify-end gap-3 mt-4">
-      <button onClick={onCancel} className="px-4 py-2 border rounded">
+    <div className="flex justify-end gap-3 mt-6 pt-2">
+      <button
+        onClick={onCancel}
+        className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors text-gray-700 font-medium"
+      >
         Cancel
       </button>
       <button
         onClick={onConfirm}
-        className="px-4 py-2 bg-black text-white rounded"
+        className="px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800 transition-colors font-medium"
       >
         Save
       </button>

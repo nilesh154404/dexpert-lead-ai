@@ -10,9 +10,15 @@ import PlanSelection from "@/components/dashboard/PlanSelection";
 import { analyticsApi } from "@/lib/api/analytics.api";
 import { leadsApi } from "@/lib/api/leads.api";
 import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { SuperAdminDashboard } from "@/components/dashboard/SuperAdminDashboard";
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  if (user?.role === "super_admin") {
+    return <SuperAdminDashboard />;
+  }
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["dashboard-stats"],
@@ -24,6 +30,14 @@ export default function Dashboard() {
     queryFn: () => leadsApi.getHotLeads(3),
   });
 
+  // --- FRONTEND MATH CALCULATION ---
+  const totalLeads = stats?.totalLeads.value || 0;
+  const totalAppointments = stats?.totalAppointments.value || 0;
+  const calcConversionRate = totalLeads > 0 
+    ? ((totalAppointments / totalLeads) * 100).toFixed(1) 
+    : "0.0";
+  // ---------------------------------
+
   // Mock AI insights - can be replaced with API later
   const aiInsights = [
     {
@@ -33,17 +47,18 @@ export default function Dashboard() {
       type: "recommendation" as const,
       action: {
         label: "View Leads",
-        onClick: () => console.log("View"),
+        onClick: () => navigate("/leads"),
       },
     },
     {
       title: "Performance update",
-      insight: `Conversion rate is ${stats?.conversionRate.value.toFixed(1) || 0}%. Keep engaging with qualified leads.`,
+      // Updated this line to use our calculated rate instead of the backend one
+      insight: `Conversion rate is ${calcConversionRate}%. Keep engaging with qualified leads.`,
       confidence: 87,
       type: "trend" as const,
       action: {
         label: "View Analytics",
-        onClick: () => console.log("View"),
+        onClick: () => navigate("/analytics"),
       },
     },
   ];
@@ -89,7 +104,8 @@ export default function Dashboard() {
           />
           <StatsCard
             title="Conversion Rate"
-            value={`${stats.conversionRate.value.toFixed(1)}%`}
+            // Updated this line to use our calculated rate!
+            value={`${calcConversionRate}%`}
             change={{ value: stats.conversionRate.change, label: "vs last month" }}
             icon={TrendingUp}
             iconColor="text-emerald-600"

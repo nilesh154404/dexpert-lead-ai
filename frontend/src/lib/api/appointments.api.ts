@@ -80,8 +80,8 @@ export const appointmentsApi = {
   },
 
   getByLead: async (leadId: string): Promise<Appointment[]> => {
-    return apiClient.get<Appointment[]>(`/appointments/lead/${leadId}`);
-  },
+  return apiClient.get<Appointment[]>('/appointments', { params: { leadId } });
+},
 
   getById: async (id: string): Promise<Appointment> => {
     return apiClient.get<Appointment>(`/appointments/${id}`);
