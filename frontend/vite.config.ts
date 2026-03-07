@@ -11,7 +11,7 @@ export default defineConfig(({ mode }) => ({
     historyApiFallback: true, // ✅ THIS IS THE FIX
     proxy: {
       '/api': {
-        target: 'http://localhost:3000/api/v1',
+        target: 'https://dexchatbackend.dexpertsystems.com/',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
       },
