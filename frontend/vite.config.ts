@@ -7,12 +7,13 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 8080,
+    port: 8089,
         historyApiFallback: true, // ✅ THIS IS THE FIX
 
     hmr: {
       overlay: false,
     },
+    allowedHosts:["lead-ai.dexpertsystems.com"]
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
   resolve: {
