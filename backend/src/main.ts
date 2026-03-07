@@ -41,6 +41,7 @@ app.useStaticAssets(join(__dirname, '..', 'uploads'), {
   origin: [
     'http://localhost:8080',
     'http://localhost:5173',
+    'https://lead-ai.dexpertsystems.com'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
