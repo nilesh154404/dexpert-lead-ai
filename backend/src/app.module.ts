@@ -19,6 +19,7 @@ import { ProductModule } from './product/product.module';
 
 import { ProductPromptModule } from './product-prompt/product-prompt.module';
 import { SubscriptionModule } from './subscription/subscription.module';
+import { MCPModule } from './mcp/mcp.module';
 
 
 @Module({
@@ -38,7 +39,7 @@ import { SubscriptionModule } from './subscription/subscription.module';
     AnalyticsModule,
     TenantsModule,
     AiConfigModule,
-  
+    MCPModule,
     FileUploadModule,
     ProductModule,
     ProductPromptModule,
@@ -54,4 +55,4 @@ import { SubscriptionModule } from './subscription/subscription.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }
