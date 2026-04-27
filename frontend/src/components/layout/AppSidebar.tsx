@@ -32,7 +32,7 @@ const mainNavItems = [
   { title: "Leads", url: "/leads", icon: Users },
   { title: "Appointments", url: "/appointments", icon: Calendar },
   { title: "Conversations", url: "/conversations", icon: MessageSquare },
-  { title: "Subscription", url: "/subscription", icon: Settings },
+  // { title: "Subscription", url: "/subscription", icon: Settings },
 ];
 
 const aiNavItems = [

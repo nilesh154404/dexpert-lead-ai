@@ -1,6 +1,11 @@
 import { Controller, Post, Body, BadRequestException } from '@nestjs/common';
 import { MCPService } from './mcp.service';
+import { MCPApiKeyGuard } from './guards/mcp-api-key.guard';
+import { UseGuards } from '@nestjs/common';
+import { Public } from '../auth/decorators/public.decorator';
 
+@Public()
+@UseGuards(MCPApiKeyGuard)
 @Controller('mcp')
 export class MCPController {
   constructor(private readonly mcpService: MCPService) {}

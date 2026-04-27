@@ -137,14 +137,14 @@ export default function Login() {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-secondary/50 rounded-lg">
+          {/* <div className="mt-6 p-4 bg-secondary/50 rounded-lg">
             <p className="text-sm font-medium mb-2">Demo Credentials:</p>
             <div className="text-xs text-muted-foreground space-y-1">
               <p>Super Admin: superadmin@kindred.com / superadmin123</p>
               <p>Org Admin: john@techcorp.com / admin123</p>
               <p>Staff: jane@techcorp.com / staff123</p>
-            </div>
-          </div>
+            </div> */}
+          {/* </div> */}
         </CardContent>
       </Card>
     </div>

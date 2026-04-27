@@ -6,16 +6,16 @@ import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 
 async function bootstrap() {
-const app = await NestFactory.create<NestExpressApplication>(AppModule);
-// Serve uploaded files statically
-app.useStaticAssets(join(__dirname, '..', 'uploads'), {
-  prefix: '/uploads',
-});
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  // Serve uploaded files statically
+  app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+    prefix: '/uploads',
+  });
 
   // Enable CORS - Support multiple frontend origins
   const allowedOrigins = process.env.FRONTEND_URLS
     ? process.env.FRONTEND_URLS.split(',')
-    : ['http://localhost:8080', 'http://localhost:5173', 'https://lead-ai.dexpertsystems.com','dexchat.dexpertsystems.com', 'https://lead-ai-backend.dexpertsystems.com'];
+    : ['http://localhost:8080', 'http://localhost:5173', 'https://lead-ai.dexpertsystems.com', 'dexchat.dexpertsystems.com', 'https://lead-ai-backend.dexpertsystems.com'];
 
   // app.enableCors({
   //   origin: "*",
@@ -38,16 +38,16 @@ app.useStaticAssets(join(__dirname, '..', 'uploads'), {
   // });
 
   app.enableCors({
-  origin: [
-    'http://localhost:8080',
-    'http://localhost:5173',
-    'https://lead-ai.dexpertsystems.com',
-    "https://dexchat.dexpertsystems.com"
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-});
+    origin: [
+      'http://localhost:8080',
+      'http://localhost:5173',
+      'https://lead-ai.dexpertsystems.com',
+      "https://dexchat.dexpertsystems.com"
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
 
 
   // Global validation pipe
@@ -61,14 +61,14 @@ app.useStaticAssets(join(__dirname, '..', 'uploads'), {
 
   // Global prefix with versioning
   app.setGlobalPrefix('api');
-  
+
   // Enable versioning
   app.enableVersioning({
     type: VersioningType.URI,
     defaultVersion: '1',
   });
 
-  
+
 
 
 
