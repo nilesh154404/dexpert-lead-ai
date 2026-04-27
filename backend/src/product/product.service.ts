@@ -258,6 +258,7 @@ export class ProductService {
     const product = this.productRepo.create({
       product_name: dto.product_name,
       description: dto.description ?? null,
+      display_order: dto.display_order ?? 0,
       tenant_id: tenantId,
       is_active: true,
     });
@@ -271,7 +272,7 @@ export class ProductService {
   getMyProducts(tenantId: string) {
     return this.productRepo.find({
       where: { tenant_id: tenantId },
-      order: { created_at: 'DESC' },
+      order: { display_order: 'ASC', created_at: 'DESC' },
     });
   }
 
@@ -336,6 +337,10 @@ export class ProductService {
 
     if (dto.is_active !== undefined) {
       product.is_active = dto.is_active; // 🔥 FIX
+    }
+
+    if (dto.display_order !== undefined) {
+      product.display_order = dto.display_order;
     }
 
     const savedProduct = await this.productRepo.save(product);

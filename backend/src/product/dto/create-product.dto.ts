@@ -7,6 +7,10 @@ export class CreateProductDto {
   @IsNotEmpty()
   product_name: string;
 
+  @ApiPropertyOptional({ example: 0 })
+  @IsOptional()
+  display_order?: number;
+
   @ApiPropertyOptional({
     example: 'Customer Relationship Management tool',
   })

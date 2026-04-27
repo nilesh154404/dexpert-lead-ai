@@ -50,6 +50,9 @@ export class Product {
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
 
+  @Column({ type: 'int', default: 0 })
+  display_order: number;
+
   @CreateDateColumn()
   created_at: Date;
 }

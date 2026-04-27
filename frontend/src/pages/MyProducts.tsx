@@ -467,6 +467,7 @@ export default function MyProducts() {
   const [showAdd, setShowAdd] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
+  const [newOrder, setNewOrder] = useState(0);
 
   /* ---------- EDIT MODAL ---------- */
   const [editing, setEditing] = useState<Product | null>(null);
@@ -487,9 +488,10 @@ export default function MyProducts() {
   const handleAdd = async () => {
     if (!newName.trim()) return alert("Product name required");
 
-    await productApi.createProduct(newName, newDesc);
+    await productApi.createProduct(newName, newDesc, newOrder);
     setNewName("");
     setNewDesc("");
+    setNewOrder(0);
     setShowAdd(false);
     loadProducts();
   };
@@ -502,6 +504,7 @@ export default function MyProducts() {
       product_name: editing.product_name,
       description: editing.description,
       is_active: editing.is_active,
+      display_order: editing.display_order,
     });
 
     setEditing(null);
@@ -609,6 +612,7 @@ export default function MyProducts() {
                 <p className="text-sm text-gray-600 line-clamp-2">
                   {p.description || <span className="text-gray-400 italic">No description provided.</span>}
                 </p>
+                <p className="text-xs font-semibold text-gray-400 mt-2">Order: {p.display_order}</p>
               </div>
 
               {/* Card Footer (Actions) */}
@@ -638,7 +642,7 @@ export default function MyProducts() {
             />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Description</label>
             <textarea
               value={newDesc}
@@ -646,6 +650,16 @@ export default function MyProducts() {
               placeholder="Product description (optional)"
               rows={3}
               className="w-full border border-gray-300 rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Order (e.g., 1, 2, 3)</label>
+            <input
+              type="number"
+              value={newOrder}
+              onChange={(e) => setNewOrder(parseInt(e.target.value) || 0)}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
             />
           </div>
 
@@ -673,6 +687,16 @@ export default function MyProducts() {
               rows={3}
               placeholder="Product description"
               className="w-full border border-gray-300 rounded-md px-3 py-2 resize-none focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1.5">Order (e.g., 1, 2, 3)</label>
+            <input
+              type="number"
+              value={editing.display_order}
+              onChange={(e) => setEditing({ ...editing, display_order: parseInt(e.target.value) || 0 })}
+              className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-black"
             />
           </div>
 

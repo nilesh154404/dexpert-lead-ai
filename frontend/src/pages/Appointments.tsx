@@ -15,15 +15,27 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
 function getWeekDates(date: Date) {
-  const start = new Date(date);
-  start.setHours(0, 0, 0, 0);
+  const d = new Date(date);
+  const day = d.getDay();
+  // Adjust to Monday (1). Sunday is 0.
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  
   const dates = [];
   for (let i = 0; i < 5; i++) {
-    const d = new Date(start);
-    d.setDate(start.getDate() + i);
-    dates.push(d);
+    const nextDate = new Date(monday);
+    nextDate.setDate(monday.getDate() + i);
+    dates.push(nextDate);
   }
   return dates;
+}
+
+function getSlotDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function getSlotDateTime(date: Date, time: string): Date {
@@ -97,11 +109,12 @@ export default function Appointments() {
     try {
       // Fetch appointments for the week
       const apptsData = await appointmentsApi.getAll(startDate, endDate);
+      console.log('Appointments data:', apptsData);
       setAppointments(apptsData);
 
       // Fetch available slots for each day of the week
       const slotsPromises = weekDates.map((date) =>
-        appointmentsApi.getAvailableSlots(date.toISOString().split("T")[0])
+        appointmentsApi.getAvailableSlots(getSlotDateString(date))
       );
       const slotsResults = await Promise.all(slotsPromises);
       const allSlots = slotsResults.flat();
@@ -123,7 +136,7 @@ export default function Appointments() {
   };
 
   const handleSlotClick = (date: Date, time: string) => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = getSlotDateString(date);
     const slot = availableSlots.find((s: any) => s.date === dateStr && s.time === time);
     if (slot && slot.availableStaff && slot.availableStaff.length > 0) {
       setSelectedSlot({ date: dateStr, time });
@@ -237,14 +250,14 @@ export default function Appointments() {
   };
 
   const getAppointmentsForSlot = (date: Date, time: string): Appointment[] => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = getSlotDateString(date);
     return appointments.filter(
       (apt) => apt.date === dateStr && apt.time === time
     );
   };
 
   const getSlotInfo = (date: Date, time: string): { availableStaff: any[]; bookedStaff: any[] } => {
-    const dateStr = date.toISOString().split("T")[0];
+    const dateStr = getSlotDateString(date);
     const slot = availableSlots.find((s: any) => s.date === dateStr && s.time === time);
     if (slot) {
       return {

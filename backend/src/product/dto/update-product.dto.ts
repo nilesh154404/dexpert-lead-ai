@@ -21,4 +21,8 @@ export class UpdateProductDto {
   @IsOptional()
   @IsBoolean()
   is_active?: boolean;
+
+  @ApiPropertyOptional({ example: 0 })
+  @IsOptional()
+  display_order?: number;
 }

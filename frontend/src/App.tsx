@@ -20,6 +20,7 @@ import Login from "./pages/Login";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
 import Appointments from "./pages/Appointments";
+import StaffAppointments from "./pages/StaffAppointments";
 import AIConfig from "./pages/AIConfig";
 import Analytics from "./pages/Analytics";
 import Team from "./pages/Team";
@@ -49,20 +50,22 @@ const queryClient = new QueryClient({
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
+/* Lines omitted */
   return <>{children}</>;
+}
+
+/* ---------------- APPOINTMENT ROUTER ---------------- */
+
+function AppointmentRouter() {
+  const { user } = useAuth();
+  
+  // Org Admin sees the overview
+  if (user?.role === "organisation" || user?.role === "admin" || user?.role === "super_admin") {
+    return <Appointments />;
+  }
+  
+  // Staff sees their specific schedule
+  return <StaffAppointments />;
 }
 
 /* ---------------- ORG ADMIN ROUTE ---------------- */
@@ -143,7 +146,7 @@ const App = () => (
                 path="/appointments"
                 element={
                   <ProtectedRoute>
-                    <Appointments />
+                    <AppointmentRouter />
                   </ProtectedRoute>
                 }
               />

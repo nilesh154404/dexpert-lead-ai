@@ -46,9 +46,10 @@ import { apiClient } from "./api-client";
 export type Product = {
   id: number;
   product_name: string;
-  description?:string;
+  description?: string;
+  display_order: number;
   created_at: string;
-  is_active:boolean;
+  is_active: boolean;
 };
 
 export const productApi = {
@@ -57,29 +58,23 @@ export const productApi = {
     return res.data;
   },
 
-  createProduct: async (product_name: string, description?:string) => {
-    const res = await apiClient.post("/product/create", { product_name,description });
+  createProduct: async (product_name: string, description?: string, display_order?: number) => {
+    const res = await apiClient.post("/product/create", { product_name, description, display_order });
     return res.data;
   },
 
-  // updateProduct: async (id: number, product_name: string, description?:string,is_active?:boolean) => {
-  //   const res = await apiClient.patch(`/product/${id}`, {
-  //     product_name,
-  //   });
-  //   return res.data;
-  // },
-
   updateProduct: async (
-  id: number,
-  data: {
-    product_name?: string;
-    description?: string;
-    is_active?: boolean;
-  }
-) => {
-  const res = await apiClient.patch(`/product/${id}`, data);
-  return res.data;
-},
+    id: number,
+    data: {
+      product_name?: string;
+      description?: string;
+      is_active?: boolean;
+      display_order?: number;
+    }
+  ) => {
+    const res = await apiClient.patch(`/product/${id}`, data);
+    return res.data;
+  },
 
 
   deleteProduct: async (id: number) => {
